@@ -3,6 +3,7 @@ import {
     KDStat,
     WPAStat,
     TeamTStat,
+    Kill,
 } from './definitions'
 
 export async function fetchKDStats(): Promise<KDStat[]> {
@@ -139,6 +140,18 @@ export async function FetchTeamTStats(): Promise<TeamTStat[]> {
     `
 
     return tstats
+}
+
+export async function FetchMapKills({mapName}: {mapName: string}): Promise<Kill[]> {
+    const kills = await sql<Kill[]>`
+        SELECT attacker_team, attacker_x, attacker_y, attacker_z, victim_x, victim_y, victim_z
+        FROM kill
+        INNER JOIN match
+        ON kill.match_id = match.id
+        WHERE match.map = 'de_inferno' AND attacker_x != 'NaN'
+    `
+
+    return kills
 }
 
 // SELECT player.name, t1.ksum, t1.kcount, t1.kavg, t2.dsum, t2.dcount, t2.davg FROM ( 

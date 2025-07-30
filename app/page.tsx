@@ -4,6 +4,7 @@ import WPATable from "./ui/wpatable/wpatable";
 import { KDPage } from "./ui/kdpage/kdpage";
 import { TeamTPage } from "./ui/tsidepage/tsidepage";
 import { Map } from "@/components/radarmap/map";
+import { KDPlots } from "@/components/radarmap/kd-plots";
 
 export default function Home() {
   return (
@@ -23,7 +24,7 @@ export default function Home() {
             </div>
             <TabsContent value="basic"><KDPage/></TabsContent>
             <TabsContent value="wpa"><div className="grid grid-cols-1 lg:grid-cols-2"><WPATable /></div></TabsContent>
-            <TabsContent value="test"><Map/></TabsContent>
+            <TabsContent value="test"><KDPlots/></TabsContent>
             <TabsContent value="team"></TabsContent>
             <TabsContent value="t_side"><TeamTPage/></TabsContent>
         </Tabs>

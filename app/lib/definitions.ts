@@ -30,3 +30,13 @@ export type TeamTStat = {
     planted: number, 
     t_save: number,
 }
+
+export type Kill = {
+    attacker_team: string,
+    attacker_x: number,
+    attacker_y: number,
+    attacker_z: number,
+    victim_x: number, 
+    victim_y: number,
+    victim_z: number,
+}
