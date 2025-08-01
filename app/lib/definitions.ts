@@ -40,3 +40,22 @@ export type Kill = {
     victim_y: number,
     victim_z: number,
 }
+
+export type MapGrenade = {
+    steamid: string,
+    team: 'CT' | 'TERRORIST',
+    grenade_type: string,
+    start_x: number,
+    start_y: number,
+    start_z: number,
+    end_x: number,
+    end_y: number,
+    end_z: number,
+    start_time: number,
+    end_time: number,
+}
+
+export type Team = {
+    name: string,
+    id: UUID,
+}

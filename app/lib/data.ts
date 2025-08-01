@@ -4,6 +4,8 @@ import {
     WPAStat,
     TeamTStat,
     Kill,
+    MapGrenade,
+    Team
 } from './definitions'
 
 export async function fetchKDStats(): Promise<KDStat[]> {
@@ -152,6 +154,29 @@ export async function FetchMapKills({mapName}: {mapName: string}): Promise<Kill[
     `
 
     return kills
+}
+
+export async function FetchMapGrenades(mapName: string, current_team: string): Promise<MapGrenade[]> {
+    const grenades = await sql<MapGrenade[]>`
+        SELECT grenade.player_id AS steamid, team, grenade_type, start_x, start_y, start_z, end_x, end_y, end_y, CAST(grenade.start_tick - round.freeze_time_end_tick AS FLOAT) / 64.0 AS start_time, CAST(grenade.end_tick - round.freeze_time_end_tick AS FLOAT) / 64.0 AS end_time
+        FROM grenade
+        INNER JOIN match ON match.id = grenade.match_id
+        INNER JOIN round ON round.id = grenade.round_id
+        INNER JOIN team ON team.id = grenade.team_id
+        WHERE match.map = ${mapName} AND team.name = ${current_team};
+    `
+
+    return grenades
+}
+
+export async function FetchTeams(): Promise<Team[]> {
+    const teams = await sql<Team[]>`
+        SELECT DISTINCT team.name, team.id
+        FROM team
+        ORDER BY team.name;
+    `
+
+    return teams
 }
 
 // SELECT player.name, t1.ksum, t1.kcount, t1.kavg, t2.dsum, t2.dcount, t2.davg FROM ( 
