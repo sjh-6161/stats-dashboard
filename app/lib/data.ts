@@ -3,9 +3,9 @@ import {
     KDStat,
     WPAStat,
     TeamTStat,
-    Kill,
     MapGrenade,
-    Team
+    Team,
+    MapKill
 } from './definitions'
 
 export async function fetchKDStats(): Promise<KDStat[]> {
@@ -144,18 +144,6 @@ export async function FetchTeamTStats(): Promise<TeamTStat[]> {
     return tstats
 }
 
-export async function FetchMapKills({mapName}: {mapName: string}): Promise<Kill[]> {
-    const kills = await sql<Kill[]>`
-        SELECT attacker_team, attacker_x, attacker_y, attacker_z, victim_x, victim_y, victim_z
-        FROM kill
-        INNER JOIN match
-        ON kill.match_id = match.id
-        WHERE match.map = 'de_inferno' AND attacker_x != 'NaN'
-    `
-
-    return kills
-}
-
 export async function FetchMapGrenades(mapName: string, current_team: string): Promise<MapGrenade[]> {
     const grenades = await sql<MapGrenade[]>`
         SELECT grenade.player_id AS steamid, team, grenade_type, start_x, start_y, start_z, end_x, end_y, end_y, CAST(grenade.start_tick - round.freeze_time_end_tick AS FLOAT) / 64.0 AS start_time, CAST(grenade.end_tick - round.freeze_time_end_tick AS FLOAT) / 64.0 AS end_time
@@ -167,6 +155,20 @@ export async function FetchMapGrenades(mapName: string, current_team: string): P
     `
 
     return grenades
+}
+
+export async function FetchMapKills(mapName: string, current_team: string): Promise<MapKill[]> {
+    const kills = await sql<MapKill[]>`
+        SELECT attacker_id AS attacker_steamid, victim_id as victim_steamid, attacker_team, victim_team, t1.name = ${current_team} AS attacker_this_team, t2.name = ${current_team} AS victim_this_team, weapon, CAST(tick - freeze_time_end_tick AS FLOAT) / 64.0 as time, attacker_x, attacker_y, attacker_z, victim_x, victim_y, victim_z
+        FROM kill
+        INNER JOIN match ON match.id = kill.match_id
+        INNER JOIN team t1 ON t1.id = kill.attacker_team_id
+        INNER JOIN team t2 ON t2.id = kill.victim_team_id
+        INNER JOIN round ON round.id = kill.round_id
+        WHERE (t1.name = ${current_team} OR t2.name = ${current_team}) AND match.map = ${mapName}
+    `
+
+    return kills
 }
 
 export async function FetchTeams(): Promise<Team[]> {

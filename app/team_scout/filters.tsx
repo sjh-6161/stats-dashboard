@@ -12,14 +12,40 @@ import {
 import { Slider } from "@/components/ui/slider"
 import { Dispatch, SetStateAction } from 'react';
 import { Team } from '../lib/definitions';
+import { Switch } from '@/components/ui/switch';
+import { ComponentLabel } from '@/components/ui/label';
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function Filters({
     time,
     setTime,
+    showGrenades,
+    setShowGrenades,
+    showKills,
+    setShowKills,
+    setShowPlants,
+    setShowTrajectories,
+    setOnlyAwp,
     teams,
 }: {
     time: number,
     setTime: Dispatch<SetStateAction<number>>,
+    showGrenades: boolean,
+    setShowGrenades: Dispatch<SetStateAction<boolean>>,
+    showKills: boolean,
+    setShowKills: Dispatch<SetStateAction<boolean>>,
+    setShowPlants: Dispatch<SetStateAction<boolean>>,
+    setShowTrajectories: Dispatch<SetStateAction<boolean>>,
+    setOnlyAwp: Dispatch<SetStateAction<boolean>>,
     teams: Team[]
 }) {
     const searchParams = useSearchParams();
@@ -42,6 +68,7 @@ export default function Filters({
 
     return (
         <div className="h-full w-full">
+            <div className="m-2 text-2xl">Filters</div>
             <div className='flex flex-row'>
                 <div className="m-2">
                     <Select value={current_team || ""} onValueChange={(team) => handleFilterChange("team", team)}>
@@ -81,10 +108,49 @@ export default function Filters({
                     </Select>
                 </div>
             </div>
+            <div className='m-2'>
+                <div className='flex items-center space-x-2 my-2'>
+                    <Switch id="grenades" onCheckedChange={() => (setShowGrenades(prev => !prev))} defaultChecked={true}/>
+                    <ComponentLabel htmlFor="grenades">Grenades</ComponentLabel>
+                </div>
+                <div className='flex items-center space-x-2 my-2'>
+                    <Switch id="killsdeaths" onCheckedChange={() => (setShowKills(prev => !prev))} defaultChecked={true}/>
+                    <ComponentLabel htmlFor="killsdeaths">Kills / Deaths</ComponentLabel>
+                </div>
+                <div className='flex items-center space-x-2 my-2'>
+                    <Switch id="bombplants" onCheckedChange={() => (setShowPlants(prev => !prev))} defaultChecked={true}/>
+                    <ComponentLabel htmlFor="bombplants">Bomb Plants</ComponentLabel>
+                </div>
+            </div>
             <div className='m-2 mt-5 flex flex-row'>
                 <div>{time.toFixed(1)} Seconds into Round</div>
                 <Slider onValueChange={(val) => (setTime(val[0]))} className="w-1/2 ml-5" defaultValue={[15]} max={100} step={0.1} />
             </div>
+            {showGrenades && <div className='m-2 rounded-md border p-2 pt-1 text-sm shadow-xs'>
+                <div className='mb-1'>Grenade Filters</div>
+                <Tabs defaultValue="all" className=''>
+                    <TabsList>
+                        <TabsTrigger value="all">All</TabsTrigger>
+                        <TabsTrigger value="smoke">Smokes</TabsTrigger>
+                        <TabsTrigger value="he">HE Grenades</TabsTrigger>
+                        <TabsTrigger value="molotov">Molotovs</TabsTrigger>
+                        <TabsTrigger value="flash">Flashes</TabsTrigger>
+                    </TabsList>
+                </Tabs>
+            </div>}
+            {showKills && <div className='m-2 rounded-md border p-2 pt-1 pl-3 text-sm shadow-xs'>
+                <div>Duel Filters</div>
+                <div className='flex items-center space-x-2 my-2'>
+                    <Switch id="showtraj" onCheckedChange={() => (setShowTrajectories(prev => !prev))} defaultChecked={true}/>
+                    <ComponentLabel htmlFor="showtraj">Show Trajectories</ComponentLabel>
+                </div>
+                <Tabs defaultValue="all" className=''>
+                    <TabsList>
+                        <TabsTrigger value="all" onClick={() => setOnlyAwp(false)}>All</TabsTrigger>
+                        <TabsTrigger value="awp" onClick={() => setOnlyAwp(true)}>Awp Kills / Deaths</TabsTrigger>
+                    </TabsList>
+                </Tabs>
+            </div>}
         </div>
     )
 }
