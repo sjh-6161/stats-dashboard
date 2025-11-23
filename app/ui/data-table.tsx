@@ -64,7 +64,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div>
-        <div className="flex items-center py-4">
+        {/* <div className="flex items-center py-4">
             <Input
                 placeholder="Search Player..."
                 value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
@@ -73,7 +73,7 @@ export function DataTable<TData, TValue>({
                 }
                 className="max-w-sm"
             />
-        </div>
+        </div> */}
         <div className="rounded-md border">
         <Table>
             <TableHeader>
@@ -118,24 +118,24 @@ export function DataTable<TData, TValue>({
             </TableBody>
         </Table>
         </div>
-            <div className="flex items-center justify-end space-x-2 py-4">
-            <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-            >
-            Previous
-            </Button>
-            <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-            >
-            Next
-            </Button>
-        </div>
+            {/* <div className="flex items-center justify-end space-x-2 py-4">
+                <Button
+                variant="outline"
+                size="sm"
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+                >
+                Previous
+                </Button>
+                <Button
+                variant="outline"
+                size="sm"
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+                >
+                Next
+                </Button>
+            </div> */}
     </div>
   )
 }

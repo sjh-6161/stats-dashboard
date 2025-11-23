@@ -28,22 +28,16 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 export default function Filters({
     time,
     setTime,
-    showGrenades,
-    setShowGrenades,
-    showKills,
-    setShowKills,
-    setShowPlants,
+    activeTab,
+    setActiveTab,
     setShowTrajectories,
     setOnlyAwp,
     teams,
 }: {
     time: number,
     setTime: Dispatch<SetStateAction<number>>,
-    showGrenades: boolean,
-    setShowGrenades: Dispatch<SetStateAction<boolean>>,
-    showKills: boolean,
-    setShowKills: Dispatch<SetStateAction<boolean>>,
-    setShowPlants: Dispatch<SetStateAction<boolean>>,
+    activeTab: string,
+    setActiveTab: Dispatch<SetStateAction<string>>
     setShowTrajectories: Dispatch<SetStateAction<boolean>>,
     setOnlyAwp: Dispatch<SetStateAction<boolean>>,
     teams: Team[]
@@ -67,8 +61,8 @@ export default function Filters({
     };
 
     return (
-        <div className="h-full w-full">
-            <div className="m-2 text-2xl">Filters</div>
+        <div className="h-full w-full bg-red-100">
+            <div className="text-2xl">Filters</div>
             <div className='flex flex-row'>
                 <div className="m-2">
                     <Select value={current_team || ""} onValueChange={(team) => handleFilterChange("team", team)}>
@@ -108,25 +102,20 @@ export default function Filters({
                     </Select>
                 </div>
             </div>
-            <div className='m-2'>
-                <div className='flex items-center space-x-2 my-2'>
-                    <Switch id="grenades" onCheckedChange={() => (setShowGrenades(prev => !prev))} defaultChecked={true}/>
-                    <ComponentLabel htmlFor="grenades">Grenades</ComponentLabel>
-                </div>
-                <div className='flex items-center space-x-2 my-2'>
-                    <Switch id="killsdeaths" onCheckedChange={() => (setShowKills(prev => !prev))} defaultChecked={true}/>
-                    <ComponentLabel htmlFor="killsdeaths">Kills / Deaths</ComponentLabel>
-                </div>
-                <div className='flex items-center space-x-2 my-2'>
-                    <Switch id="bombplants" onCheckedChange={() => (setShowPlants(prev => !prev))} defaultChecked={true}/>
-                    <ComponentLabel htmlFor="bombplants">Bomb Plants</ComponentLabel>
-                </div>
-            </div>
+            <Tabs defaultValue="general" className='m-2' onValueChange={(tab) => setActiveTab(tab)}>
+                <TabsList>
+                    <TabsTrigger value="general">General</TabsTrigger>
+                    <TabsTrigger value="maps">Maps</TabsTrigger>
+                    <TabsTrigger value="grenades">Grenades</TabsTrigger>
+                    <TabsTrigger value="kills">Kills / Deaths</TabsTrigger>
+                    <TabsTrigger value="plants">Bomb Plants</TabsTrigger>
+                </TabsList>
+            </Tabs>
             <div className='m-2 mt-5 flex flex-row'>
                 <div>{time.toFixed(1)} Seconds into Round</div>
-                <Slider onValueChange={(val) => (setTime(val[0]))} className="w-1/2 ml-5" defaultValue={[15]} max={100} step={0.1} />
+                <Slider onValueChange={(val) => (setTime(val[0]))} className="w-1/2 ml-5" defaultValue={[12]} max={115} step={0.1} />
             </div>
-            {showGrenades && <div className='m-2 rounded-md border p-2 pt-1 text-sm shadow-xs'>
+            {activeTab == "grenades" && <div className='m-2 rounded-md border p-2 pt-1 text-sm shadow-xs'>
                 <div className='mb-1'>Grenade Filters</div>
                 <Tabs defaultValue="all" className=''>
                     <TabsList>
@@ -138,7 +127,7 @@ export default function Filters({
                     </TabsList>
                 </Tabs>
             </div>}
-            {showKills && <div className='m-2 rounded-md border p-2 pt-1 pl-3 text-sm shadow-xs'>
+            {activeTab == "kills" && <div className='m-2 rounded-md border p-2 pt-1 pl-3 text-sm shadow-xs'>
                 <div>Duel Filters</div>
                 <div className='flex items-center space-x-2 my-2'>
                     <Switch id="showtraj" onCheckedChange={() => (setShowTrajectories(prev => !prev))} defaultChecked={true}/>

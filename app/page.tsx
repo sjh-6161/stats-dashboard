@@ -5,6 +5,7 @@ import { KDPage } from "./ui/kdpage/kdpage";
 import { TeamTPage } from "./ui/tsidepage/tsidepage";
 import { Map } from "@/components/radarmap/map";
 import { KDPlots } from "@/components/radarmap/kd-plots";
+import { DefaultTables } from "./ui/defaulttables/default_tables";
 
 export default function Home() {
   return (
@@ -19,6 +20,7 @@ export default function Home() {
                 </TabsList>
                 <TabsList className="ml-6">
                     <TabsTrigger value="team">Team</TabsTrigger>
+                    <TabsTrigger value="teamdefaults">Team Defaults</TabsTrigger>
                     <TabsTrigger value="t_side">T Side</TabsTrigger>
                 </TabsList>
             </div>
@@ -26,6 +28,7 @@ export default function Home() {
             <TabsContent value="wpa"><div className="grid grid-cols-1 lg:grid-cols-2"><WPATable /></div></TabsContent>
             <TabsContent value="test"><KDPlots/></TabsContent>
             <TabsContent value="team"></TabsContent>
+            <TabsContent value="teamdefaults"><DefaultTables/></TabsContent>
             <TabsContent value="t_side"><TeamTPage/></TabsContent>
         </Tabs>
         

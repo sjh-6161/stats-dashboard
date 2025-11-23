@@ -5,7 +5,9 @@ import {
     TeamTStat,
     MapGrenade,
     Team,
-    MapKill
+    MapKill,
+    Match,
+    TeamDefault
 } from './definitions'
 
 export async function fetchKDStats(): Promise<KDStat[]> {
@@ -54,6 +56,8 @@ export async function fetchKDStats(): Promise<KDStat[]> {
 }
 
 export async function fetchWPAStats(): Promise<WPAStat[]> {
+    return []
+
     const wpastats = await sql<WPAStat[]>`
         SELECT player.steam_id, player.name, t1.ksum / t2.dsum AS kd, (t1.ksum - t2.dsum) / t3.rounds AS diffr, (t1.ksum + t2.dsum) / t3.rounds AS totr, t3.rounds 
         FROM ( 
@@ -158,6 +162,8 @@ export async function FetchMapGrenades(mapName: string, current_team: string): P
 }
 
 export async function FetchMapKills(mapName: string, current_team: string): Promise<MapKill[]> {
+    return []
+    
     const kills = await sql<MapKill[]>`
         SELECT attacker_id AS attacker_steamid, victim_id as victim_steamid, attacker_team, victim_team, t1.name = ${current_team} AS attacker_this_team, t2.name = ${current_team} AS victim_this_team, weapon, CAST(tick - freeze_time_end_tick AS FLOAT) / 64.0 as time, attacker_x, attacker_y, attacker_z, victim_x, victim_y, victim_z
         FROM kill
@@ -179,6 +185,255 @@ export async function FetchTeams(): Promise<Team[]> {
     `
 
     return teams
+}
+
+export async function FetchTeamMatches(current_team: string): Promise<Match[]> {
+    const matches = await sql<Match[]>`
+        SELECT tm1.name AS team_1, tm2.name as team_2, t1.count AS rounds_1, t2.count as rounds_2, match.map
+        FROM match
+        LEFT JOIN (
+            SELECT round.match_id, round.winning_team_id, COUNT(round.winning_team_id)
+            FROM round
+            GROUP BY round.match_id, round.winning_team_id
+            ORDER BY match_id
+        ) t1 ON t1.winning_team_id = match.team_one_id AND t1.match_id = match.id
+        LEFT JOIN (
+            SELECT round.match_id, round.winning_team_id, COUNT(round.winning_team_id)
+            FROM round
+            GROUP BY round.match_id, round.winning_team_id
+            ORDER BY match_id
+        ) t2 ON t2.winning_team_id = match.team_two_id AND t2.match_id = match.id
+        INNER JOIN team tm1 ON tm1.id = team_one_id
+        INNER JOIN team tm2 ON tm2.id = team_two_id
+        WHERE tm1.name = ${current_team} OR tm2.name = ${current_team}
+    `
+
+    return matches
+}
+
+export async function FetchTeamBuyDefaults(current_team: string, min_val: number, max_val: number): Promise<TeamDefault[]> {
+    const defaults = await sql<TeamDefault[]>`
+        SELECT 
+            total_rounds.map_name,
+            total_rounds.side, 
+            total_rounds.num_a, 
+            total_rounds.num_mid, 
+            total_rounds.num_b, 
+            COALESCE(ct_wins.ct_win, 0) AS ct_win,
+            total_rounds.rounds,
+            COALESCE(plant_times.num_plants, 0) AS num_plants,
+            ROUND(COALESCE(plant_times.avg_plant_time, 0), 2) AS avg_plant_time
+        FROM (
+        SELECT 
+            match.map AS map_name,
+            team_default.side, 
+            team_default.num_a, 
+            team_default.num_mid, 
+            team_default.num_b, 
+            COUNT(team_default.num_a) AS ct_win
+        FROM team_default
+        INNER JOIN match
+            ON team_default.match_id = match.id
+        INNER JOIN team
+            ON team_default.team_id = team.id
+        INNER JOIN (
+            SELECT round_id, team_id, SUM(equipment_value)
+            FROM buy
+            GROUP BY round_id, team_id
+        ) buys 
+            ON buys.round_id = team_default.round_id AND buys.team_id = team_default.team_id
+        INNER JOIN round
+            ON round.id = team_default.round_id
+        WHERE buys.sum > ${min_val}
+            AND buys.sum <= ${max_val}
+            AND team.name = ${current_team}
+            AND round.winning_side = 'CT' 
+            AND round.t_rounds + round.ct_rounds != 0 
+            AND round.t_rounds + round.ct_rounds != 12
+        GROUP BY match.map, team_default.num_a, team_default.num_b, team_default.num_mid, team_default.side
+        ) ct_wins
+        FULL OUTER JOIN (
+        SELECT 
+            match.map AS map_name,
+            team_default.side, 
+            team_default.num_a, 
+            team_default.num_mid, 
+            team_default.num_b, 
+            COUNT(team_default.num_a) AS rounds
+        FROM team_default
+        INNER JOIN match
+            ON team_default.match_id = match.id
+        INNER JOIN team
+            ON team_default.team_id = team.id
+        INNER JOIN (
+            SELECT round_id, team_id, SUM(equipment_value)
+            FROM buy
+            GROUP BY round_id, team_id
+        ) buys 
+            ON buys.round_id = team_default.round_id AND buys.team_id = team_default.team_id
+        INNER JOIN round
+            ON round.id = team_default.round_id
+        WHERE buys.sum > ${min_val}
+            AND buys.sum <= ${max_val}
+            AND team.name = ${current_team}
+            AND round.t_rounds + round.ct_rounds != 0 
+            AND round.t_rounds + round.ct_rounds != 12
+        GROUP BY match.map, team_default.num_a, team_default.num_b, team_default.num_mid, team_default.side
+        ) total_rounds 
+        ON ct_wins.map_name = total_rounds.map_name
+            AND ct_wins.side = total_rounds.side 
+            AND ct_wins.num_a = total_rounds.num_a 
+            AND ct_wins.num_b = total_rounds.num_b 
+            AND ct_wins.num_mid = total_rounds.num_mid
+        LEFT JOIN (
+            SELECT 
+                match.map AS map_name,
+                team_default.side, 
+                team_default.num_a, 
+                team_default.num_mid, 
+                team_default.num_b,
+                COUNT(plant.id) AS num_plants,
+                AVG((plant.tick - round.freeze_time_end_tick) / 64.0) AS avg_plant_time
+            FROM team_default
+            INNER JOIN match
+                ON team_default.match_id = match.id
+            INNER JOIN team
+                ON team_default.team_id = team.id
+            INNER JOIN (
+                SELECT round_id, team_id, SUM(equipment_value)
+                FROM buy
+                GROUP BY round_id, team_id
+            ) buys 
+                ON buys.round_id = team_default.round_id AND buys.team_id = team_default.team_id
+            INNER JOIN round
+                ON round.id = team_default.round_id
+            INNER JOIN plant
+                ON plant.match_id = match.id 
+                AND plant.round_id = round.id
+            WHERE buys.sum > 20000
+                AND buys.sum <= 100000
+                AND team.name = 'Blunder Battalion'
+                AND round.t_rounds + round.ct_rounds != 0 
+                AND round.t_rounds + round.ct_rounds != 12
+            GROUP BY match.map, team_default.num_a, team_default.num_b, team_default.num_mid, team_default.side
+        ) plant_times
+        ON plant_times.map_name = total_rounds.map_name
+            AND plant_times.side = total_rounds.side 
+            AND plant_times.num_a = total_rounds.num_a 
+            AND plant_times.num_b = total_rounds.num_b 
+            AND plant_times.num_mid = total_rounds.num_mid
+        ORDER BY map_name, side, rounds DESC
+    `
+
+    return defaults
+}
+
+export async function FetchTeamPistolDefaults(current_team: string): Promise<TeamDefault[]> {
+    const defaults = await sql<TeamDefault[]>`
+        SELECT 
+            total_rounds.map_name,
+            total_rounds.side, 
+            total_rounds.num_a, 
+            total_rounds.num_mid, 
+            total_rounds.num_b, 
+            COALESCE(ct_wins.ct_win, 0) AS ct_win,
+            total_rounds.rounds,
+            COALESCE(plant_times.num_plants, 0) AS num_plants,
+            ROUND(COALESCE(plant_times.avg_plant_time, 0), 2) AS avg_plant_time
+        FROM (
+        SELECT 
+            match.map AS map_name,
+            team_default.side, 
+            team_default.num_a, 
+            team_default.num_mid, 
+            team_default.num_b, 
+            COUNT(team_default.num_a) AS ct_win
+        FROM team_default
+        INNER JOIN match
+            ON team_default.match_id = match.id
+        INNER JOIN team
+            ON team_default.team_id = team.id
+        INNER JOIN (
+            SELECT round_id, team_id, SUM(equipment_value)
+            FROM buy
+            GROUP BY round_id, team_id
+        ) buys 
+            ON buys.round_id = team_default.round_id AND buys.team_id = team_default.team_id
+        INNER JOIN round
+            ON round.id = team_default.round_id
+        WHERE team.name = ${current_team}
+            AND round.winning_side = 'CT' 
+            AND (round.t_rounds + round.ct_rounds = 0 OR round.t_rounds + round.ct_rounds = 12)
+        GROUP BY match.map, team_default.num_a, team_default.num_b, team_default.num_mid, team_default.side
+        ) ct_wins
+        FULL OUTER JOIN (
+        SELECT 
+            match.map AS map_name,
+            team_default.side, 
+            team_default.num_a, 
+            team_default.num_mid, 
+            team_default.num_b, 
+            COUNT(team_default.num_a) AS rounds
+        FROM team_default
+        INNER JOIN match
+            ON team_default.match_id = match.id
+        INNER JOIN team
+            ON team_default.team_id = team.id
+        INNER JOIN (
+            SELECT round_id, team_id, SUM(equipment_value)
+            FROM buy
+            GROUP BY round_id, team_id
+        ) buys 
+            ON buys.round_id = team_default.round_id AND buys.team_id = team_default.team_id
+        INNER JOIN round
+            ON round.id = team_default.round_id
+        WHERE team.name = ${current_team}
+            AND (round.t_rounds + round.ct_rounds = 0 OR round.t_rounds + round.ct_rounds = 12)
+        GROUP BY match.map, team_default.num_a, team_default.num_b, team_default.num_mid, team_default.side
+        ) total_rounds 
+        ON ct_wins.map_name = total_rounds.map_name
+            AND ct_wins.side = total_rounds.side 
+            AND ct_wins.num_a = total_rounds.num_a 
+            AND ct_wins.num_b = total_rounds.num_b 
+            AND ct_wins.num_mid = total_rounds.num_mid
+        LEFT JOIN (
+            SELECT 
+                match.map AS map_name,
+                team_default.side, 
+                team_default.num_a, 
+                team_default.num_mid, 
+                team_default.num_b,
+                COUNT(plant.id) AS num_plants,
+                AVG((plant.tick - round.freeze_time_end_tick) / 64.0) AS avg_plant_time
+            FROM team_default
+            INNER JOIN match
+                ON team_default.match_id = match.id
+            INNER JOIN team
+                ON team_default.team_id = team.id
+            INNER JOIN (
+                SELECT round_id, team_id, SUM(equipment_value)
+                FROM buy
+                GROUP BY round_id, team_id
+            ) buys 
+                ON buys.round_id = team_default.round_id AND buys.team_id = team_default.team_id
+            INNER JOIN round
+                ON round.id = team_default.round_id
+            INNER JOIN plant
+                ON plant.match_id = match.id 
+                AND plant.round_id = round.id
+            WHERE team.name = ${current_team}
+                AND (round.t_rounds + round.ct_rounds = 0 OR round.t_rounds + round.ct_rounds = 12)
+            GROUP BY match.map, team_default.num_a, team_default.num_b, team_default.num_mid, team_default.side
+        ) plant_times
+        ON plant_times.map_name = total_rounds.map_name
+            AND plant_times.side = total_rounds.side 
+            AND plant_times.num_a = total_rounds.num_a 
+            AND plant_times.num_b = total_rounds.num_b 
+            AND plant_times.num_mid = total_rounds.num_mid
+        ORDER BY map_name, side, rounds DESC
+    `
+
+    return defaults
 }
 
 // SELECT player.name, t1.ksum, t1.kcount, t1.kavg, t2.dsum, t2.dcount, t2.davg FROM ( 

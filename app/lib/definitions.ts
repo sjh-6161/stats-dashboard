@@ -66,3 +66,23 @@ export type Team = {
     name: string,
     id: UUID,
 }
+
+export type Match = {
+    team_1: string,
+    team_2: string,
+    rounds_1: number,
+    rounds_2: number,
+    map: string,
+}
+
+export type TeamDefault = {
+    map_name: string,
+    side: 'CT' | 'TERRORIST' | null,
+    num_a: number,
+    num_mid: number,
+    num_b: number,
+    ct_wins: number,
+    rounds: number,
+    num_plants: number,
+    avg_plant_time: number,
+}
