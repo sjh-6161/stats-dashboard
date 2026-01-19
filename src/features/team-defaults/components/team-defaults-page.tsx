@@ -1,7 +1,8 @@
-import { getTeamBuyDefaults, getTeamPistolDefaults } from "@/lib/services";
+import { getTeamBuyDefaults, getTeamPistolDefaults, getTeams } from "@/lib/services";
 import { columns } from "./columns";
 import { DataTable } from "@/components/data-table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import TeamSelector from "./team-selector";
 
 const map_colors: Record<string, string> = {
     "de_mirage": "bg-yellow-50",
@@ -25,10 +26,17 @@ const map_nice_names: Record<string, string> = {
 
 type TeamDefaultsPageProps = {
     tournament: string;
+    team?: string;
 };
 
-export default async function TeamDefaultsPage({ tournament }: TeamDefaultsPageProps) {
-    const team_name = "Magnolias"
+export default async function TeamDefaultsPage({ tournament, team }: TeamDefaultsPageProps) {
+    const teams = await getTeams();
+    const team_name = team || teams[0]?.name || "";
+
+    if (!team_name) {
+        return <div className="p-4">No teams available.</div>;
+    }
+
     const buy_defaults = await getTeamBuyDefaults(team_name, 20000, 500000, tournament);
     const eco_defaults = await getTeamBuyDefaults(team_name, 0, 10000, tournament);
     const pistol_defaults = await getTeamPistolDefaults(team_name, tournament)
@@ -36,8 +44,10 @@ export default async function TeamDefaultsPage({ tournament }: TeamDefaultsPageP
     const map_names: string[] = [...new Set(buy_defaults.map(obj => obj.map_name))];
 
     return (
-        <Tabs defaultValue={map_names[0] || ""}>
-            <TabsList>
+        <div>
+            <TeamSelector teams={teams} currentTeam={team_name} />
+            <Tabs defaultValue={map_names[0] || ""}>
+                <TabsList>
                 {map_names.map(map_name => {
                     return(<TabsTrigger value={map_name} key={map_name}>{map_name}</TabsTrigger>)
                 })}
@@ -80,6 +90,7 @@ export default async function TeamDefaultsPage({ tournament }: TeamDefaultsPageP
                     </TabsContent>
                 )
             })}
-        </Tabs>
+            </Tabs>
+        </div>
     )
 }

@@ -8,7 +8,7 @@ import TeamDefaultsPage from "@/features/team-defaults";
 import { getTournaments } from "@/lib/services";
 
 type HomeProps = {
-  searchParams: Promise<{ tournament?: string }>;
+  searchParams: Promise<{ tournament?: string; team?: string }>;
 };
 
 export default async function Home({ searchParams }: HomeProps) {
@@ -44,7 +44,7 @@ export default async function Home({ searchParams }: HomeProps) {
             <TabsContent value="wpa"><div className="grid grid-cols-1 lg:grid-cols-2"><WeaponPerformanceTable /></div></TabsContent>
             <TabsContent value="test"><KDPlots tournament={tournament} /></TabsContent>
             <TabsContent value="team"></TabsContent>
-            <TabsContent value="teamdefaults"><TeamDefaultsPage tournament={tournament} /></TabsContent>
+            <TabsContent value="teamdefaults"><TeamDefaultsPage tournament={tournament} team={params.team} /></TabsContent>
             <TabsContent value="t_side"><TSideStatsPage tournament={tournament} /></TabsContent>
         </Tabs>
 
