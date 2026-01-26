@@ -5,10 +5,11 @@ import PlayerStatsPage from "@/features/player-stats";
 import TSideStatsPage from "@/features/tside-stats";
 import { Map, KDPlots } from "@/components/map-visualization";
 import TeamDefaultsPage from "@/features/team-defaults";
+import PlayerPositionPage from "@/features/player-position";
 import { getTournaments } from "@/lib/services";
 
 type HomeProps = {
-  searchParams: Promise<{ tournament?: string; team?: string }>;
+  searchParams: Promise<{ tournament?: string; team?: string; positionTeam?: string }>;
 };
 
 export default async function Home({ searchParams }: HomeProps) {
@@ -38,6 +39,7 @@ export default async function Home({ searchParams }: HomeProps) {
                     <TabsTrigger value="team">Team</TabsTrigger>
                     <TabsTrigger value="teamdefaults">Team Defaults</TabsTrigger>
                     <TabsTrigger value="t_side">T Side</TabsTrigger>
+                    <TabsTrigger value="player_position">Player Position</TabsTrigger>
                 </TabsList>
             </div>
             <TabsContent value="basic"><PlayerStatsPage tournament={tournament} /></TabsContent>
@@ -46,6 +48,7 @@ export default async function Home({ searchParams }: HomeProps) {
             <TabsContent value="team"></TabsContent>
             <TabsContent value="teamdefaults"><TeamDefaultsPage tournament={tournament} team={params.team} /></TabsContent>
             <TabsContent value="t_side"><TSideStatsPage tournament={tournament} /></TabsContent>
+            <TabsContent value="player_position"><PlayerPositionPage tournament={tournament} team={params.positionTeam} /></TabsContent>
         </Tabs>
 
         {/*  */}

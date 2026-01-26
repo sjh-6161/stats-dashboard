@@ -1,5 +1,5 @@
 // Player types
-export type { KDStat, WPAStat } from './player.types';
+export type { KDStat, WPAStat, PlayerPositionStat } from './player.types';
 
 // Team types
 export type { Team, TeamTStat, TeamDefault } from './team.types';

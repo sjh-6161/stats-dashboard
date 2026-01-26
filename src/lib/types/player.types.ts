@@ -19,3 +19,11 @@ export type WPAStat = {
     totr: number,
     rounds: number,
 }
+
+// Player position stats - uses dynamic keys based on map names
+// Keys will be in format: {mapShortName}_{position} (e.g., mirage_a, mirage_mid, mirage_b)
+export type PlayerPositionStat = {
+    steam_id: string,
+    name: string,
+    [key: string]: string | number, // Dynamic map position keys
+}

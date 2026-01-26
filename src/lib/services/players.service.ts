@@ -1,5 +1,6 @@
 import { sql } from '@/lib/db';
-import type { KDStat, WPAStat } from '@/lib/types';
+import type { KDStat, WPAStat, PlayerPositionStat } from '@/lib/types';
+import { ACTIVE_DUTY_MAPS, type ActiveDutyMap } from '@/lib/config/maps';
 
 export async function getPlayerKDStats(tournament: string): Promise<KDStat[]> {
     const kdstats = await sql<KDStat[]>`
@@ -98,4 +99,105 @@ export async function getPlayerWPAStats(): Promise<WPAStat[]> {
     `
 
     return wpastats
+}
+
+// Helper to get a short map name from the full map name (e.g., "de_mirage" -> "mirage")
+function getMapShortName(mapName: string): string {
+    return mapName.replace('de_', '');
+}
+
+export async function getPlayerPositionStats(tournament: string, side: 'CT' | 'TERRORIST', teamName?: string): Promise<PlayerPositionStat[]> {
+    // Query to get position counts per player per map filtered by side and optionally by team
+    type RawStat = {
+        steam_id: string,
+        name: string,
+        map: string,
+        total_rounds: number,
+        a_count: number,
+        mid_count: number,
+        b_count: number
+    };
+
+    let rawStats: RawStat[];
+
+    if (teamName) {
+        // Filter by team
+        rawStats = await sql<RawStat[]>`
+            SELECT
+                player.steam_id,
+                player.name,
+                match.map,
+                COUNT(*) AS total_rounds,
+                COUNT(CASE WHEN pd.zone = 'A' THEN 1 END) AS a_count,
+                COUNT(CASE WHEN pd.zone = 'Mid' THEN 1 END) AS mid_count,
+                COUNT(CASE WHEN pd.zone = 'B' THEN 1 END) AS b_count
+            FROM player_default pd
+            INNER JOIN player ON player.steam_id = pd.player_id
+            INNER JOIN match ON match.id = pd.match_id
+            INNER JOIN team ON team.id = pd.team_id
+            WHERE match.tournament = ${tournament}
+            AND pd.side = ${side}
+            AND team.name = ${teamName}
+            GROUP BY player.steam_id, player.name, match.map
+            ORDER BY player.name, match.map
+        `;
+    } else {
+        // No team filter
+        rawStats = await sql<RawStat[]>`
+            SELECT
+                player.steam_id,
+                player.name,
+                match.map,
+                COUNT(*) AS total_rounds,
+                COUNT(CASE WHEN pd.zone = 'A' THEN 1 END) AS a_count,
+                COUNT(CASE WHEN pd.zone = 'Mid' THEN 1 END) AS mid_count,
+                COUNT(CASE WHEN pd.zone = 'B' THEN 1 END) AS b_count
+            FROM player_default pd
+            INNER JOIN player ON player.steam_id = pd.player_id
+            INNER JOIN match ON match.id = pd.match_id
+            WHERE match.tournament = ${tournament}
+            AND pd.side = ${side}
+            GROUP BY player.steam_id, player.name, match.map
+            ORDER BY player.name, match.map
+        `;
+    }
+
+    // Transform the raw stats into the required format
+    // Group by player and pivot map data into columns
+    const playerMap = new Map<string, PlayerPositionStat>();
+
+    for (const row of rawStats) {
+        const playerId = row.steam_id;
+
+        if (!playerMap.has(playerId)) {
+            // Initialize player with all map columns set to 0
+            const playerStat: PlayerPositionStat = {
+                steam_id: row.steam_id,
+                name: row.name,
+            };
+
+            // Initialize all map position columns to 0
+            for (const map of ACTIVE_DUTY_MAPS) {
+                const shortName = getMapShortName(map);
+                playerStat[`${shortName}_a`] = 0;
+                playerStat[`${shortName}_mid`] = 0;
+                playerStat[`${shortName}_b`] = 0;
+            }
+
+            playerMap.set(playerId, playerStat);
+        }
+
+        const playerStat = playerMap.get(playerId)!;
+        const shortName = getMapShortName(row.map);
+
+        // Only process if this is an active duty map
+        if (ACTIVE_DUTY_MAPS.includes(row.map as ActiveDutyMap)) {
+            const total = row.total_rounds || 1; // Avoid division by zero
+            playerStat[`${shortName}_a`] = Number((row.a_count / total).toFixed(2));
+            playerStat[`${shortName}_mid`] = Number((row.mid_count / total).toFixed(2));
+            playerStat[`${shortName}_b`] = Number((row.b_count / total).toFixed(2));
+        }
+    }
+
+    return Array.from(playerMap.values());
 }
