@@ -97,12 +97,25 @@ export const columns: ColumnDef<TeamDefault>[] = [
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Wins
+          RWP
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       )
     },
-    cell: ({ row }) => <div className={`text-center p-1`}>{row.getValue("side") == "CT" ? parseFloat(row.getValue("ct_win")) : parseFloat(row.getValue("rounds")) - parseFloat(row.getValue("ct_win"))}</div>
+    cell: ({ row }) => {
+      const rounds = parseFloat(row.getValue("rounds"))
+      const ctWin = parseFloat(row.getValue("ct_win"))
+      const wins = row.getValue("side") == "CT" ? ctWin : rounds - ctWin
+      const winPct = rounds > 0 ? wins / rounds : 0
+      return (
+        <div
+          className="text-center p-1"
+          style={{ backgroundColor: getRGB(winPct, 0.0, 1.0, 0.5) }}
+        >
+          {winPct.toFixed(2)}
+        </div>
+      )
+    }
   },
   {
     accessorKey: "rounds",
