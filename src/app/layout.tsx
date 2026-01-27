@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { UnifiedNavigation } from "@/components/ui/unified-navigation";
+import { TabNavigation } from "@/components/ui/tab-navigation";
 import { getTournaments } from "@/lib/services";
 
 const geistSans = Geist({
@@ -32,8 +32,14 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-screen`}
       >
-        <UnifiedNavigation tournaments={tournamentNames} />
-        {children}
+        <div className="p-5 font-[family-name:var(--font-geist-sans)] h-full">
+          <main className="w-full h-full flex flex-col gap-4">
+            <TabNavigation tournaments={tournamentNames} />
+            <div className="flex-1">
+              {children}
+            </div>
+          </main>
+        </div>
       </body>
     </html>
   );
