@@ -33,6 +33,7 @@ export default function TeamSelector({ teams, currentTeam }: TeamSelectorProps) 
                     <SelectValue placeholder="Select a team" />
                 </SelectTrigger>
                 <SelectContent>
+                    <SelectItem value="all">All Teams</SelectItem>
                     {teams.map((team) => (
                         <SelectItem key={team.id} value={team.name}>
                             {team.name}

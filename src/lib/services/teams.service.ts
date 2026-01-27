@@ -106,7 +106,7 @@ export async function getTeamTSideStats(tournament: string): Promise<TeamTStat[]
     return tstats
 }
 
-export async function getTeamBuyDefaults(currentTeam: string, minVal: number, maxVal: number, tournament: string): Promise<TeamDefault[]> {
+export async function getTeamBuyDefaults(currentTeam: string | null, minVal: number, maxVal: number, tournament: string): Promise<TeamDefault[]> {
     const defaults = await sql<TeamDefault[]>`
         WITH round_defaults AS (
             SELECT
@@ -141,7 +141,7 @@ export async function getTeamBuyDefaults(currentTeam: string, minVal: number, ma
             INNER JOIN round ON round.id = rd.round_id
             WHERE buys.sum > ${minVal}
                 AND buys.sum <= ${maxVal}
-                AND team.name = ${currentTeam}
+                AND (${currentTeam}::text IS NULL OR team.name = ${currentTeam})
                 AND round.t_rounds + round.ct_rounds != 0
                 AND round.t_rounds + round.ct_rounds != 12
                 AND match.tournament = ${tournament}
@@ -186,7 +186,7 @@ export async function getTeamBuyDefaults(currentTeam: string, minVal: number, ma
             INNER JOIN plant ON plant.match_id = match.id AND plant.round_id = round.id
             WHERE buys.sum > 20000
                 AND buys.sum <= 100000
-                AND team.name = ${currentTeam}
+                AND (${currentTeam}::text IS NULL OR team.name = ${currentTeam})
                 AND round.t_rounds + round.ct_rounds != 0
                 AND round.t_rounds + round.ct_rounds != 12
                 AND match.tournament = ${tournament}
@@ -221,7 +221,7 @@ export async function getTeamBuyDefaults(currentTeam: string, minVal: number, ma
     return defaults
 }
 
-export async function getTeamPistolDefaults(currentTeam: string, tournament: string): Promise<TeamDefault[]> {
+export async function getTeamPistolDefaults(currentTeam: string | null, tournament: string): Promise<TeamDefault[]> {
     const defaults = await sql<TeamDefault[]>`
         WITH round_defaults AS (
             SELECT
@@ -254,7 +254,7 @@ export async function getTeamPistolDefaults(currentTeam: string, tournament: str
             INNER JOIN team ON rd.team_id = team.id
             INNER JOIN buys ON buys.round_id = rd.round_id AND buys.team_id = rd.team_id
             INNER JOIN round ON round.id = rd.round_id
-            WHERE team.name = ${currentTeam}
+            WHERE (${currentTeam}::text IS NULL OR team.name = ${currentTeam})
                 AND (round.t_rounds + round.ct_rounds = 0 OR round.t_rounds + round.ct_rounds = 12)
                 AND match.tournament = ${tournament}
         ),
@@ -296,7 +296,7 @@ export async function getTeamPistolDefaults(currentTeam: string, tournament: str
             INNER JOIN buys ON buys.round_id = rd.round_id AND buys.team_id = rd.team_id
             INNER JOIN round ON round.id = rd.round_id
             INNER JOIN plant ON plant.match_id = match.id AND plant.round_id = round.id
-            WHERE team.name = ${currentTeam}
+            WHERE (${currentTeam}::text IS NULL OR team.name = ${currentTeam})
                 AND (round.t_rounds + round.ct_rounds = 0 OR round.t_rounds + round.ct_rounds = 12)
                 AND match.tournament = ${tournament}
             GROUP BY match.map, rd.num_a, rd.num_b, rd.num_mid, rd.side

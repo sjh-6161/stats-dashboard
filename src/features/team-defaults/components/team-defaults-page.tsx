@@ -11,7 +11,8 @@ const map_colors: Record<string, string> = {
     "de_train": "bg-stone-50",
     "de_ancient": "bg-green-50",
     "de_inferno": "bg-red-50",
-    "de_overpass": "bg-slate-100"
+    "de_overpass": "bg-slate-100",
+    "de_anubis": "bg-orange-50"
 }
 
 const map_nice_names: Record<string, string> = {
@@ -21,7 +22,8 @@ const map_nice_names: Record<string, string> = {
     "de_train": "Train",
     "de_ancient": "Ancient",
     "de_inferno": "Inferno",
-    "de_overpass": "Overpass"
+    "de_overpass": "Overpass",
+    "de_anubis": "Anubis"
 }
 
 type TeamDefaultsPageProps = {
@@ -31,25 +33,22 @@ type TeamDefaultsPageProps = {
 
 export default async function TeamDefaultsPage({ tournament, team }: TeamDefaultsPageProps) {
     const teams = await getTeams();
-    const team_name = team || teams[0]?.name || "";
+    const selected_team = team || "all";
+    const team_name_for_query = selected_team === "all" ? null : selected_team;
 
-    if (!team_name) {
-        return <div className="p-4">No teams available.</div>;
-    }
-
-    const buy_defaults = await getTeamBuyDefaults(team_name, 20000, 500000, tournament);
-    const eco_defaults = await getTeamBuyDefaults(team_name, 0, 10000, tournament);
-    const pistol_defaults = await getTeamPistolDefaults(team_name, tournament)
+    const buy_defaults = await getTeamBuyDefaults(team_name_for_query, 20000, 500000, tournament);
+    const eco_defaults = await getTeamBuyDefaults(team_name_for_query, 0, 10000, tournament);
+    const pistol_defaults = await getTeamPistolDefaults(team_name_for_query, tournament)
 
     const map_names: string[] = [...new Set(buy_defaults.map(obj => obj.map_name))];
 
     return (
         <div>
-            <TeamSelector teams={teams} currentTeam={team_name} />
+            <TeamSelector teams={teams} currentTeam={selected_team} />
             <Tabs defaultValue={map_names[0] || ""}>
                 <TabsList>
                 {map_names.map(map_name => {
-                    return(<TabsTrigger value={map_name} key={map_name}>{map_name}</TabsTrigger>)
+                    return(<TabsTrigger value={map_name} key={map_name}>{map_nice_names[map_name]}</TabsTrigger>)
                 })}
             </TabsList>
             {map_names.map(map_name => {
