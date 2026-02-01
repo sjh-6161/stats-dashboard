@@ -183,9 +183,9 @@ export async function getTeamBuyDefaults(currentTeam: string | null, minVal: num
             INNER JOIN team ON rd.team_id = team.id
             INNER JOIN buys ON buys.round_id = rd.round_id AND buys.team_id = rd.team_id
             INNER JOIN round ON round.id = rd.round_id
-            INNER JOIN plant ON plant.match_id = match.id AND plant.round_id = round.id
-            WHERE buys.sum > 20000
-                AND buys.sum <= 100000
+            LEFT JOIN plant ON plant.match_id = match.id AND plant.round_id = round.id
+            WHERE buys.sum > ${minVal}
+                AND buys.sum <= ${maxVal}
                 AND (${currentTeam}::text IS NULL OR team.name = ${currentTeam})
                 AND round.t_rounds + round.ct_rounds != 0
                 AND round.t_rounds + round.ct_rounds != 12
@@ -295,7 +295,7 @@ export async function getTeamPistolDefaults(currentTeam: string | null, tourname
             INNER JOIN team ON rd.team_id = team.id
             INNER JOIN buys ON buys.round_id = rd.round_id AND buys.team_id = rd.team_id
             INNER JOIN round ON round.id = rd.round_id
-            INNER JOIN plant ON plant.match_id = match.id AND plant.round_id = round.id
+            LEFT JOIN plant ON plant.match_id = match.id AND plant.round_id = round.id
             WHERE (${currentTeam}::text IS NULL OR team.name = ${currentTeam})
                 AND (round.t_rounds + round.ct_rounds = 0 OR round.t_rounds + round.ct_rounds = 12)
                 AND match.tournament = ${tournament}

@@ -160,6 +160,10 @@ export const columns: ColumnDef<TeamDefault>[] = [
         </Button>
       )
     },
-    cell: ({ row }) => <div className='text-center p-1'>{parseFloat(row.getValue("avg_plant_time")).toFixed(1)}</div>
+    cell: ({ row }) => {
+      const numPlants = parseFloat(row.getValue("num_plants"))
+      const plantTime = parseFloat(row.getValue("avg_plant_time"))
+      return <div className='text-center p-1'>{numPlants > 0 ? plantTime.toFixed(1) : ""}</div>
+    }
   },
 ]
