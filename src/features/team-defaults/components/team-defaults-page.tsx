@@ -33,18 +33,16 @@ type TeamDefaultsPageProps = {
 
 export default async function TeamDefaultsPage({ tournament, team }: TeamDefaultsPageProps) {
     const teams = await getTeams();
-    const selected_team = team || "all";
-    const team_name_for_query = selected_team === "all" ? null : selected_team;
 
-    const buy_defaults = await getTeamBuyDefaults(team_name_for_query, 20000, 500000, tournament);
-    const eco_defaults = await getTeamBuyDefaults(team_name_for_query, 0, 10000, tournament);
-    const pistol_defaults = await getTeamPistolDefaults(team_name_for_query, tournament)
+    const buy_defaults = await getTeamBuyDefaults(team || null, 20000, 500000, tournament);
+    const eco_defaults = await getTeamBuyDefaults(team || null, 0, 10000, tournament);
+    const pistol_defaults = await getTeamPistolDefaults(team || null, tournament)
 
     const map_names: string[] = [...new Set(buy_defaults.map(obj => obj.map_name))];
 
     return (
         <div>
-            <TeamSelector teams={teams} currentTeam={selected_team} />
+            <TeamSelector teams={teams} currentTeam={team} />
             <Tabs defaultValue={map_names[0] || ""}>
                 <TabsList>
                 {map_names.map(map_name => {

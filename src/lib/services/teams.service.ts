@@ -221,6 +221,86 @@ export async function getTeamBuyDefaults(currentTeam: string | null, minVal: num
     return defaults
 }
 
+export type TeamRoundStats = {
+    map: string | null;
+    maps_won: number;
+    maps_lost: number;
+    maps_tied: number;
+    rounds_won: number;
+    rounds_lost: number;
+    pistol_won: number;
+    pistol_lost: number;
+    eco_won: number;
+    eco_lost: number;
+    gun_won: number;
+    gun_lost: number;
+};
+
+export async function getTeamRoundStats(teamName: string, tournament: string): Promise<TeamRoundStats[]> {
+    const stats = await sql<TeamRoundStats[]>`
+        WITH buys AS (
+            SELECT round_id, team_id, SUM(equipment_value) AS sum
+            FROM buy
+            GROUP BY round_id, team_id
+        ),
+        round_data AS (
+            SELECT
+                match.map,
+                match.id AS match_id,
+                round.id AS round_id,
+                round.winning_team_id,
+                round.t_rounds + round.ct_rounds AS round_number,
+                team.id AS team_id,
+                CASE
+                    WHEN match.team_one_id = team.id THEN match.team_two_id
+                    ELSE match.team_one_id
+                END AS opponent_team_id,
+                COALESCE(team_buy.sum, 0) AS team_equipment
+            FROM round
+            INNER JOIN match ON round.match_id = match.id
+            INNER JOIN team ON (team.id = match.team_one_id OR team.id = match.team_two_id)
+            LEFT JOIN buys team_buy ON team_buy.round_id = round.id AND team_buy.team_id = team.id
+            WHERE team.name = ${teamName}
+                AND match.tournament = ${tournament}
+        ),
+        round_data_with_opp AS (
+            SELECT
+                rd.*,
+                COALESCE(opp_buy.sum, 0) AS opponent_equipment
+            FROM round_data rd
+            LEFT JOIN buys opp_buy ON opp_buy.round_id = rd.round_id AND opp_buy.team_id = rd.opponent_team_id
+        ),
+        match_results AS (
+            SELECT
+                map,
+                match_id,
+                team_id,
+                SUM(CASE WHEN winning_team_id = team_id THEN 1 ELSE 0 END) AS team_rounds,
+                SUM(CASE WHEN winning_team_id != team_id THEN 1 ELSE 0 END) AS opp_rounds
+            FROM round_data_with_opp
+            GROUP BY map, match_id, team_id
+        )
+        SELECT
+            rd.map,
+            (SELECT COUNT(*)::int FROM match_results mr WHERE (rd.map IS NULL OR mr.map = rd.map) AND mr.team_rounds > mr.opp_rounds) AS maps_won,
+            (SELECT COUNT(*)::int FROM match_results mr WHERE (rd.map IS NULL OR mr.map = rd.map) AND mr.team_rounds < mr.opp_rounds) AS maps_lost,
+            (SELECT COUNT(*)::int FROM match_results mr WHERE (rd.map IS NULL OR mr.map = rd.map) AND mr.team_rounds = mr.opp_rounds) AS maps_tied,
+            SUM(CASE WHEN winning_team_id = team_id THEN 1 ELSE 0 END)::int AS rounds_won,
+            SUM(CASE WHEN winning_team_id != team_id THEN 1 ELSE 0 END)::int AS rounds_lost,
+            SUM(CASE WHEN winning_team_id = team_id AND (round_number = 0 OR round_number = 12) THEN 1 ELSE 0 END)::int AS pistol_won,
+            SUM(CASE WHEN winning_team_id != team_id AND (round_number = 0 OR round_number = 12) THEN 1 ELSE 0 END)::int AS pistol_lost,
+            SUM(CASE WHEN winning_team_id = team_id AND team_equipment < 10000 AND round_number != 0 AND round_number != 12 THEN 1 ELSE 0 END)::int AS eco_won,
+            SUM(CASE WHEN winning_team_id != team_id AND team_equipment < 10000 AND round_number != 0 AND round_number != 12 THEN 1 ELSE 0 END)::int AS eco_lost,
+            SUM(CASE WHEN winning_team_id = team_id AND team_equipment >= 20000 AND opponent_equipment >= 20000 AND round_number != 0 AND round_number != 12 THEN 1 ELSE 0 END)::int AS gun_won,
+            SUM(CASE WHEN winning_team_id != team_id AND team_equipment >= 20000 AND opponent_equipment >= 20000 AND round_number != 0 AND round_number != 12 THEN 1 ELSE 0 END)::int AS gun_lost
+        FROM round_data_with_opp rd
+        GROUP BY ROLLUP(rd.map)
+        ORDER BY rd.map NULLS FIRST
+    `;
+
+    return stats;
+}
+
 export async function getTeamPistolDefaults(currentTeam: string | null, tournament: string): Promise<TeamDefault[]> {
     const defaults = await sql<TeamDefault[]>`
         WITH round_defaults AS (

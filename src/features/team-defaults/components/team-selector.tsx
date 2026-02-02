@@ -12,7 +12,7 @@ import type { Team } from "@/lib/types"
 
 type TeamSelectorProps = {
     teams: Team[]
-    currentTeam: string
+    currentTeam?: string
 }
 
 export default function TeamSelector({ teams, currentTeam }: TeamSelectorProps) {
@@ -33,7 +33,6 @@ export default function TeamSelector({ teams, currentTeam }: TeamSelectorProps) 
                     <SelectValue placeholder="Select a team" />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="all">All Teams</SelectItem>
                     {teams.map((team) => (
                         <SelectItem key={team.id} value={team.name}>
                             {team.name}

@@ -7,8 +7,10 @@ export {
     getTeamMatches,
     getTeamTSideStats,
     getTeamBuyDefaults,
-    getTeamPistolDefaults
+    getTeamPistolDefaults,
+    getTeamRoundStats
 } from './teams.service';
+export type { TeamRoundStats } from './teams.service';
 
 // Map services
 export { getMapGrenades, getMapKills } from './maps.service';
