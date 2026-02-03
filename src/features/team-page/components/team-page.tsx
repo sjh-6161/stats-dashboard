@@ -2,6 +2,7 @@ import { getTeamRoundStats, getTeamBuyDefaults, getTeamPistolDefaults, getTeams 
 import TeamSelector from "@/features/team-defaults/components/team-selector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TeamDefaultsSection from "./team-defaults-section";
+import { TeamLoadingWrapper } from "@/components/ui/team-loading-wrapper";
 
 const map_colors: Record<string, string> = {
     "de_mirage": "bg-yellow-50",
@@ -53,7 +54,7 @@ export default async function TeamPage({ tournament, team }: TeamPageProps) {
     const map_names = [...new Set(roundStats.map(obj => obj.map).filter((m): m is string => m !== null))];
 
     return (
-        <div>
+        <TeamLoadingWrapper>
             <div className="flex justify-between items-center mb-4">
                 <TeamSelector teams={teams} currentTeam={team} />
                 {overallStats && (
@@ -160,6 +161,6 @@ export default async function TeamPage({ tournament, team }: TeamPageProps) {
                     </Tabs>
                 </div>
             )}
-        </div>
+        </TeamLoadingWrapper>
     );
 }

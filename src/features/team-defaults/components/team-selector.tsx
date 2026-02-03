@@ -8,6 +8,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { useTeamLoading } from "@/components/ui/team-loading-wrapper"
 import type { Team } from "@/lib/types"
 
 type TeamSelectorProps = {
@@ -18,11 +19,14 @@ type TeamSelectorProps = {
 export default function TeamSelector({ teams, currentTeam }: TeamSelectorProps) {
     const router = useRouter()
     const searchParams = useSearchParams()
+    const { startTransition } = useTeamLoading()
 
     const handleTeamChange = (teamName: string) => {
         const params = new URLSearchParams(searchParams.toString())
         params.set("team", teamName)
-        router.push(`?${params.toString()}`)
+        startTransition(() => {
+            router.push(`?${params.toString()}`)
+        })
     }
 
     return (

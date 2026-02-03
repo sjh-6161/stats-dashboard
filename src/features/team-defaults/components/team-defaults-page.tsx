@@ -3,6 +3,7 @@ import { columns } from "./columns";
 import { DataTable } from "@/components/data-table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import TeamSelector from "./team-selector";
+import { TeamLoadingWrapper } from "@/components/ui/team-loading-wrapper";
 
 const map_colors: Record<string, string> = {
     "de_mirage": "bg-yellow-50",
@@ -41,7 +42,7 @@ export default async function TeamDefaultsPage({ tournament, team }: TeamDefault
     const map_names: string[] = [...new Set(buy_defaults.map(obj => obj.map_name))];
 
     return (
-        <div>
+        <TeamLoadingWrapper>
             <TeamSelector teams={teams} currentTeam={team} />
             <Tabs defaultValue={map_names[0] || ""}>
                 <TabsList>
@@ -88,6 +89,6 @@ export default async function TeamDefaultsPage({ tournament, team }: TeamDefault
                 )
             })}
             </Tabs>
-        </div>
+        </TeamLoadingWrapper>
     )
 }
