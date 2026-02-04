@@ -13,6 +13,7 @@ export type MapGrenade = {
 }
 
 export type MapKill = {
+    map_name: string,
     attacker_steamid: string | null,
     victim_steamid: string,
     attacker_team: 'CT' | 'TERRORIST' | null,
@@ -21,10 +22,19 @@ export type MapKill = {
     victim_this_team: boolean,
     weapon: string,
     time: number,
+    plant_time: number | null,
     attacker_x: number | null,
     attacker_y: number | null,
     attacker_z: number | null,
     victim_x: number,
     victim_y: number,
     victim_z: number,
+}
+
+export type MapPlant = {
+    map_name: string,
+    site: "A" | "B",
+    x: number,
+    y: number,
+    z: number,
 }

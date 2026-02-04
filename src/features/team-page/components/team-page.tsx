@@ -1,8 +1,9 @@
 import { getTeamRoundStats, getTeamBuyDefaults, getTeamPistolDefaults, getTeams } from "@/lib/services";
 import TeamSelector from "@/features/team-defaults/components/team-selector";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import TeamDefaultsSection from "./team-defaults-section";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { TeamLoadingWrapper } from "@/components/ui/team-loading-wrapper";
+import TeamContentSection from "./team-content-section";
+import { getMapKills, getMapPlants } from "@/lib/services/maps.service";
 
 const map_colors: Record<string, string> = {
     "de_mirage": "bg-yellow-50",
@@ -39,17 +40,16 @@ function formatRWP(won: number, total: number): string {
 export default async function TeamPage({ tournament, team }: TeamPageProps) {
     const teams = await getTeams();
 
-    const roundStats = team
-        ? await getTeamRoundStats(team, tournament) : [];
+    const roundStats = team ? await getTeamRoundStats(team, tournament) : [];
 
-    const buy_defaults = team
-        ? await getTeamBuyDefaults(team, 20000, 500000, tournament) : [];
-    const eco_defaults = team
-        ? await getTeamBuyDefaults(team, 0, 10000, tournament) : [];
-    const pistol_defaults = team
-        ? await getTeamPistolDefaults(team, tournament) : [];
+    const buy_defaults = team ? await getTeamBuyDefaults(team, 20000, 500000, tournament) : [];
+    const eco_defaults = team ? await getTeamBuyDefaults(team, 0, 10000, tournament) : [];
+    const pistol_defaults = team ? await getTeamPistolDefaults(team, tournament) : [];
 
     const overallStats = roundStats?.find(s => s.map === null);
+
+    const plants = team ? await getMapPlants(team, tournament) : [];
+    const duels = team ? await getMapKills(team, tournament) : [];
 
     const map_names = [...new Set(roundStats.map(obj => obj.map).filter((m): m is string => m !== null))];
 
@@ -59,37 +59,29 @@ export default async function TeamPage({ tournament, team }: TeamPageProps) {
                 <TeamSelector teams={teams} currentTeam={team} />
                 {overallStats && (
                     <div className="flex gap-2">
-                        <div className="items-center px-3 py-1 bg-white rounded shadow-sm flex flex-row w-48">
-                            <div className="text-sm text-gray-500 mr-3">Record</div>
-                            <div className="text-lg font-medium">
-                                {overallStats.maps_won}
-                                {overallStats.maps_tied > 0 && `-${overallStats.maps_tied}`}-{overallStats.maps_lost}
-                            </div>
+                        <div className={`items-center px-3 py-1 rounded shadow-sm flex flex-row`}>
+                        <div className="text-sm text-gray-500 mr-3">Record</div>
+                        <div className="text-lg font-medium mr-10 w-18">
+                            {overallStats.maps_won}
+                            {overallStats.maps_tied > 0 && `-${overallStats.maps_tied}`}-{overallStats.maps_lost}
                         </div>
-                        <div className="items-center px-3 py-1 bg-white rounded shadow-sm flex flex-row w-48">
-                            <div className="text-sm text-gray-500 mr-3">RWP</div>
-                            <div className="text-lg font-medium">
-                                {formatRWP(overallStats.rounds_won, overallStats.rounds_won + overallStats.rounds_lost)}
-                            </div>
+                        <div className="text-sm text-gray-500 mr-3">RWP</div>
+                        <div className="text-lg font-medium mr-10 w-12">
+                            {formatRWP(overallStats.rounds_won, overallStats.rounds_won + overallStats.rounds_lost)}
                         </div>
-                        <div className="items-center px-3 py-1 bg-white rounded shadow-sm flex flex-row w-48">
-                            <div className="text-sm text-gray-500 mr-3">Pistol</div>
-                            <div className="text-lg font-medium">
-                                {formatRWP(overallStats.pistol_won, overallStats.pistol_won + overallStats.pistol_lost)}
-                            </div>
+                        <div className="text-sm text-gray-500 mr-3">Pistol</div>
+                        <div className="text-lg font-medium mr-10 w-12">
+                            {formatRWP(overallStats.pistol_won, overallStats.pistol_won + overallStats.pistol_lost)}
                         </div>
-                        <div className="items-center px-3 py-1 bg-white rounded shadow-sm flex flex-row w-48">
-                            <div className="text-sm text-gray-500 mr-3">Eco</div>
-                            <div className="text-lg font-medium">
-                                {formatRWP(overallStats.eco_won, overallStats.eco_won + overallStats.eco_lost)}
-                            </div>
+                        <div className="text-sm text-gray-500 mr-3">Eco</div>
+                        <div className="text-lg font-medium mr-10 w-12">
+                            {formatRWP(overallStats.eco_won, overallStats.eco_won + overallStats.eco_lost)}
                         </div>
-                        <div className="items-center px-3 py-1 bg-white rounded shadow-sm flex flex-row w-48">
-                            <div className="text-sm text-gray-500 mr-3">Buy v Buy</div>
-                            <div className="text-lg font-medium">
-                                {formatRWP(overallStats.gun_won, overallStats.gun_won + overallStats.gun_lost)}
-                            </div>
+                        <div className="text-sm text-gray-500 mr-3">Buy v Buy</div>
+                        <div className="text-lg font-medium mr-10 w-12">
+                            {formatRWP(overallStats.gun_won, overallStats.gun_won + overallStats.gun_lost)}
                         </div>
+                    </div>
                     </div>
                 )}
             </div>
@@ -102,59 +94,18 @@ export default async function TeamPage({ tournament, team }: TeamPageProps) {
                             if (!mapStats) return null;
                             return (
                                 <TabsContent value={map_name} key={map_name} className="mt-0">
-                                    <div className="flex justify-between items-center">
-                                        <TabsList>
-                                            {map_names.map(mn => (
-                                                <TabsTrigger value={mn} key={mn}>{map_nice_names[mn]}</TabsTrigger>
-                                            ))}
-                                        </TabsList>
-                                        <div className="flex gap-2">
-                                            <div className={`items-center px-3 py-1 rounded shadow-sm flex flex-row ${map_colors[map_name]} w-48`}>
-                                                <div className="text-sm text-gray-500 mr-3">Record</div>
-                                                <div className="text-lg font-medium">
-                                                    {mapStats.maps_won}
-                                                    {mapStats.maps_tied > 0 && `-${mapStats.maps_tied}`}-{mapStats.maps_lost}
-                                                </div>
-                                            </div>
-                                            <div className={`items-center px-3 py-1 rounded shadow-sm flex flex-row ${map_colors[map_name]} w-48`}>
-                                                <div className="text-sm text-gray-500 mr-3">RWP</div>
-                                                <div className="text-lg font-medium">
-                                                    {formatRWP(mapStats.rounds_won, mapStats.rounds_won + mapStats.rounds_lost)}
-                                                </div>
-                                            </div>
-                                            <div className={`items-center px-3 py-1 rounded shadow-sm flex flex-row ${map_colors[map_name]} w-48`}>
-                                                <div className="text-sm text-gray-500 mr-3">Pistol</div>
-                                                <div className="text-lg font-medium">
-                                                    {formatRWP(mapStats.pistol_won, mapStats.pistol_won + mapStats.pistol_lost)}
-                                                </div>
-                                            </div>
-                                            <div className={`items-center px-3 py-1 rounded shadow-sm flex flex-row ${map_colors[map_name]} w-48`}>
-                                                <div className="text-sm text-gray-500 mr-3">Eco</div>
-                                                <div className="text-lg font-medium">
-                                                    {formatRWP(mapStats.eco_won, mapStats.eco_won + mapStats.eco_lost)}
-                                                </div>
-                                            </div>
-                                            <div className={`items-center px-3 py-1 rounded shadow-sm flex flex-row ${map_colors[map_name]} w-48`}>
-                                                <div className="text-sm text-gray-500 mr-3">Buy v Buy</div>
-                                                <div className="text-lg font-medium">
-                                                    {formatRWP(mapStats.gun_won, mapStats.gun_won + mapStats.gun_lost)}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-3 gap-4 mt-5">
-                                        <div>
-                                            <TeamDefaultsSection
-                                                map_name={map_name}
-                                                pistol_defaults={pistol_defaults}
-                                                eco_defaults={eco_defaults}
-                                                buy_defaults={buy_defaults}
-                                            />
-                                        </div>
-                                        <div className="col-span-2">
-                                        </div>
-                                    </div>
+                                    <TeamContentSection
+                                        map_name={map_name}
+                                        map_names={map_names}
+                                        map_nice_names={map_nice_names}
+                                        map_color={map_colors[map_name]}
+                                        mapStats={mapStats}
+                                        pistol_defaults={pistol_defaults}
+                                        eco_defaults={eco_defaults}
+                                        buy_defaults={buy_defaults}
+                                        plants={plants}
+                                        duels={duels}
+                                    />
                                 </TabsContent>
                             );
                         })}

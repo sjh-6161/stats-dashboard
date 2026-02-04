@@ -20,7 +20,7 @@ export type TeamDefault = {
     num_a: number,
     num_mid: number,
     num_b: number,
-    ct_wins: number,
+    ct_win: number,
     rounds: number,
     num_plants: number,
     avg_plant_time: number,
