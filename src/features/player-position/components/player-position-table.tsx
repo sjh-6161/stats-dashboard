@@ -155,7 +155,7 @@ export function PlayerPositionTable({
                                     data-state={row.getIsSelected() && "selected"}
                                 >
                                     {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id} className="px-2 py-1">
+                                        <TableCell key={cell.id} className="p-0">
                                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                         </TableCell>
                                     ))}
