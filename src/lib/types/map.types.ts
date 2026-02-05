@@ -29,6 +29,10 @@ export type MapKill = {
     victim_x: number,
     victim_y: number,
     victim_z: number,
+    round_type: 'pistol' | 'eco' | 'buy',
+    num_a: number,
+    num_mid: number,
+    num_b: number,
 }
 
 export type MapPlant = {
@@ -37,4 +41,8 @@ export type MapPlant = {
     x: number,
     y: number,
     z: number,
+    round_type: 'pistol' | 'eco' | 'buy',
+    num_a: number,
+    num_mid: number,
+    num_b: number,
 }

@@ -2,7 +2,7 @@
 export type { KDStat, WPAStat, PlayerPositionStat } from './player.types';
 
 // Team types
-export type { Team, TeamTStat, TeamDefault } from './team.types';
+export type { Team, TeamTStat, TeamDefault, RoundType, Side, DefaultKey } from './team.types';
 
 // Map types
 export type { MapGrenade, MapKill, MapPlant } from './map.types';

@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import TeamDefaultsSection from "./team-defaults-section";
 import TeamMapSection from "./team-map-section";
 import { TabsList, TabsTrigger, Tabs } from "@/components/ui/tabs";
-import type { MapPlant, MapKill, TeamDefault } from "@/lib/types";
+import type { MapPlant, MapKill, TeamDefault, RoundType, DefaultKey } from "@/lib/types";
 
 type MapStats = {
     maps_won: number;
@@ -51,6 +51,38 @@ export default function TeamContentSection({
     duels
 }: TeamContentSectionProps) {
     const [side, setSide] = useState<"CT" | "TERRORIST">("CT");
+    const [defaultType, setDefaultType] = useState<RoundType>("all");
+    const [selectedDefaults, setSelectedDefaults] = useState<Set<DefaultKey>>(new Set());
+
+    // Compute all default keys for current map/side/defaultType
+    const allDefaultKeys = useMemo(() => {
+        const keys = new Set<DefaultKey>();
+
+        const addKeysFromDefaults = (defaults: TeamDefault[], roundType: 'pistol' | 'eco' | 'buy') => {
+            defaults
+                .filter(d => d.map_name === map_name && d.side === side)
+                .forEach(d => {
+                    keys.add(`${d.num_a}-${d.num_mid}-${d.num_b}-${roundType}` as DefaultKey);
+                });
+        };
+
+        if (defaultType === 'all' || defaultType === 'pistol') {
+            addKeysFromDefaults(pistol_defaults, 'pistol');
+        }
+        if (defaultType === 'all' || defaultType === 'eco') {
+            addKeysFromDefaults(eco_defaults, 'eco');
+        }
+        if (defaultType === 'all' || defaultType === 'buy') {
+            addKeysFromDefaults(buy_defaults, 'buy');
+        }
+
+        return keys;
+    }, [map_name, side, defaultType, pistol_defaults, eco_defaults, buy_defaults]);
+
+    // Initialize selectedDefaults with all rows when dependencies change
+    useEffect(() => {
+        setSelectedDefaults(new Set(allDefaultKeys));
+    }, [allDefaultKeys]);
 
     return (
         <>
@@ -61,12 +93,6 @@ export default function TeamContentSection({
                             <TabsTrigger value={mn} key={mn}>{map_nice_names[mn]}</TabsTrigger>
                         ))}
                     </TabsList>
-                    <Tabs value={side} onValueChange={(v) => setSide(v as "CT" | "TERRORIST")}>
-                        <TabsList>
-                            <TabsTrigger value="CT">CT</TabsTrigger>
-                            <TabsTrigger value="TERRORIST">T</TabsTrigger>
-                        </TabsList>
-                    </Tabs>
                 </div>
                 <div className="flex gap-2">
                     <div className={`items-center px-3 py-1 rounded shadow-sm flex flex-row ${map_color}`}>
@@ -95,6 +121,24 @@ export default function TeamContentSection({
                 </div>
             </div>
 
+            {/* CT/T and Round Type selectors - below map tabs */}
+            <div className="flex gap-2 items-center mt-3">
+                <Tabs value={side} onValueChange={(v) => setSide(v as "CT" | "TERRORIST")}>
+                    <TabsList>
+                        <TabsTrigger value="CT">CT</TabsTrigger>
+                        <TabsTrigger value="TERRORIST">T</TabsTrigger>
+                    </TabsList>
+                </Tabs>
+                <Tabs value={defaultType} onValueChange={(v) => setDefaultType(v as RoundType)}>
+                    <TabsList>
+                        <TabsTrigger value="all">All</TabsTrigger>
+                        <TabsTrigger value="pistol">Pistol</TabsTrigger>
+                        <TabsTrigger value="eco">Eco</TabsTrigger>
+                        <TabsTrigger value="buy">Buy</TabsTrigger>
+                    </TabsList>
+                </Tabs>
+            </div>
+
             <div className="grid grid-cols-3 gap-4 mt-5">
                 <div>
                     <TeamDefaultsSection
@@ -103,6 +147,9 @@ export default function TeamContentSection({
                         eco_defaults={eco_defaults}
                         buy_defaults={buy_defaults}
                         side={side}
+                        defaultType={defaultType}
+                        selectedDefaults={selectedDefaults}
+                        onSelectionChange={setSelectedDefaults}
                     />
                 </div>
                 <div className="col-span-2">
@@ -111,6 +158,8 @@ export default function TeamContentSection({
                         side={side}
                         plants={plants}
                         duels={duels}
+                        defaultType={defaultType}
+                        selectedDefaults={selectedDefaults}
                     />
                 </div>
             </div>

@@ -1,5 +1,9 @@
 import { UUID } from "crypto";
 
+export type RoundType = 'all' | 'pistol' | 'eco' | 'buy';
+export type Side = 'CT' | 'TERRORIST';
+export type DefaultKey = `${number}-${number}-${number}-${'pistol' | 'eco' | 'buy'}`;
+
 export type Team = {
     name: string,
     id: UUID,

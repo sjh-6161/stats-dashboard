@@ -3,7 +3,7 @@
 import { Map, positionTransformX, positionTransformY } from "@/components/map-visualization/map"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
-import { MapKill, MapPlant } from "@/lib/types";
+import { MapKill, MapPlant, RoundType, DefaultKey } from "@/lib/types";
 import { useState, useMemo } from "react";
 
 const SiteColors: Record<string, string> = {
@@ -16,6 +16,8 @@ type TeamMapSectionProps = {
     side: "CT" | "TERRORIST",
     plants: MapPlant[];
     duels: MapKill[];
+    defaultType: RoundType;
+    selectedDefaults: Set<DefaultKey>;
 }
 
 type MapType = "utility" | "duels" | "plants";
@@ -26,12 +28,28 @@ export default function TeamMapSection({
     map_name,
     side,
     plants,
-    duels
+    duels,
+    defaultType,
+    selectedDefaults
 }: TeamMapSectionProps) {
     const [mapType, setMapType] = useState<MapType>("utility");
     const [timingType, setTimingType] = useState<TimingType>("early");
     const [duelDisplayMode, setDuelDisplayMode] = useState<DuelDisplayMode>("both");
     const [timeFilter, setTimeFilter] = useState<number>(60);
+
+    // Helper to check if a duel/plant matches the selected defaults
+    const matchesSelectedDefaults = useMemo(() => {
+        return (item: { round_type: string; num_a: number; num_mid: number; num_b: number }) => {
+            if (defaultType === 'all') {
+                // In "all" mode, check if the setup key (with "-all" suffix) is selected
+                const allKey = `${item.num_a}-${item.num_mid}-${item.num_b}-all` as DefaultKey;
+                return selectedDefaults.has(allKey);
+            }
+            // In specific mode, check if the exact key is selected
+            const key = `${item.num_a}-${item.num_mid}-${item.num_b}-${item.round_type}` as DefaultKey;
+            return selectedDefaults.has(key);
+        };
+    }, [defaultType, selectedDefaults]);
 
     const filteredDuels = useMemo(() => {
         return duels
@@ -40,6 +58,15 @@ export default function TeamMapSection({
                 // Filter by side - show duels where this team was playing on the selected side
                 const teamSide = d.attacker_this_team ? d.attacker_team : d.victim_team;
                 return teamSide === side;
+            })
+            .filter(d => {
+                // Filter by round type
+                if (defaultType === 'all') return true;
+                return d.round_type === defaultType;
+            })
+            .filter(d => {
+                // Filter by selected defaults
+                return matchesSelectedDefaults(d);
             })
             .filter(d => {
                 switch (timingType) {
@@ -63,7 +90,21 @@ export default function TeamMapSection({
                         return true;
                 }
             });
-    }, [duels, map_name, side, timingType, timeFilter]);
+    }, [duels, map_name, side, defaultType, matchesSelectedDefaults, timingType, timeFilter]);
+
+    const filteredPlants = useMemo(() => {
+        return plants
+            .filter(p => p.map_name === map_name)
+            .filter(p => {
+                // Filter by round type
+                if (defaultType === 'all') return true;
+                return p.round_type === defaultType;
+            })
+            .filter(p => {
+                // Filter by selected defaults
+                return matchesSelectedDefaults(p);
+            });
+    }, [plants, map_name, defaultType, matchesSelectedDefaults]);
 
     const getTimingLabel = () => {
         switch (timingType) {
@@ -135,7 +176,7 @@ export default function TeamMapSection({
             </div>
             <div className="col-span-3 w-full mb-4">
                 <Map map_name={map_name}>
-                    {mapType === "plants" && plants.filter(p => p.map_name === map_name).map((p, i) => (
+                    {mapType === "plants" && filteredPlants.map((p, i) => (
                         <rect
                             key={i}
                             x={positionTransformX(p.x, map_name) - 0.5}
@@ -161,11 +202,8 @@ export default function TeamMapSection({
                         // Team position: attacker for kills, victim for deaths
                         const teamX = isTeamKill ? attackerX : victimX;
                         const teamY = isTeamKill ? attackerY : victimY;
-                        const opponentX = isTeamKill ? victimX : attackerX;
-                        const opponentY = isTeamKill ? victimY : attackerY;
 
                         const fillColor = isTeamKill ? "fill-green-500" : "fill-red-500";
-                        const strokeColor = isTeamKill ? "stroke-green-500" : "stroke-red-500";
 
                         return (
                             <g key={i} className="mix-blend-screen">
