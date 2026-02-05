@@ -55,7 +55,7 @@ export default async function TeamPage({ tournament, team }: TeamPageProps) {
 
     return (
         <TeamLoadingWrapper>
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex justify-between items-center">
                 <TeamSelector teams={teams} currentTeam={team} />
                 {overallStats && (
                     <div className="flex gap-2">

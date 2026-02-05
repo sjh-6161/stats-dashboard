@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import {
   Select,
@@ -9,24 +9,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 type Tab = {
   path: string;
   label: string;
+  disabled?: boolean;
 };
 
-const tabs: Tab[][] = [
-  [
-    { path: '/', label: 'Player' },
-    { path: '/wpa', label: 'WPA' },
-    { path: '/test', label: 'Test' },
-  ],
-  [
-    { path: '/team', label: 'Team' },
-    { path: '/team-defaults', label: 'Team Defaults' },
-    { path: '/t-side', label: 'T Side' },
-    { path: '/player-position', label: 'Player Position' },
-  ],
+const tabs: Tab[] = [
+  { path: '/', label: 'Player' },
+  { path: '/wpa', label: 'WPA', disabled: true },
+  { path: '/test', label: 'Test', disabled: true },
+  { path: '/team', label: 'Team' },
+  { path: '/team-defaults', label: 'Team Defaults' },
+  { path: '/t-side', label: 'T Side', disabled: true },
+  { path: '/player-position', label: 'Player Position' },
 ];
 
 type TabNavigationProps = {
@@ -37,6 +35,14 @@ export function TabNavigation({ tournaments }: TabNavigationProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  // Optimistic tab state for instant visual feedback
+  const [activeTab, setActiveTab] = useState(pathname);
+
+  // Sync with actual pathname when navigation completes
+  useEffect(() => {
+    setActiveTab(pathname);
+  }, [pathname]);
 
   const selectedTournament = searchParams.get('tournament') || tournaments[0] || '';
 
@@ -49,6 +55,11 @@ export function TabNavigation({ tournaments }: TabNavigationProps) {
     return queryString ? `${path}?${queryString}` : path;
   };
 
+  const handleTabChange = (value: string) => {
+    setActiveTab(value); // Instant visual update
+    router.push(buildTabUrl(value));
+  };
+
   const handleTournamentChange = (tournament: string) => {
     const params = new URLSearchParams();
     params.set('tournament', tournament);
@@ -57,28 +68,20 @@ export function TabNavigation({ tournaments }: TabNavigationProps) {
 
   return (
     <div className="flex flex-row items-center justify-between w-full">
-      <div className="flex flex-row gap-6">
-        {tabs.map((group, groupIndex) => (
-          <div
-            key={groupIndex}
-            className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground"
-          >
-            {group.map((tab) => (
-              <Link
-                key={tab.path}
-                href={buildTabUrl(tab.path)}
-                className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
-                  pathname === tab.path
-                    ? 'bg-background text-foreground shadow'
-                    : 'hover:bg-background/50'
-                }`}
-              >
-                {tab.label}
-              </Link>
-            ))}
-          </div>
-        ))}
-      </div>
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
+        <TabsList variant="line">
+          {tabs.map((tab) => (
+            <TabsTrigger
+              key={tab.path}
+              value={tab.path}
+              variant="line"
+              disabled={tab.disabled}
+            >
+              {tab.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
       {tournaments.length > 0 && (
         <div className="flex items-center gap-2">
