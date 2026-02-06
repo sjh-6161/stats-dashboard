@@ -67,7 +67,9 @@ const tabsTriggerVariants = cva(
 
 interface TabsTriggerProps
   extends React.ComponentProps<typeof TabsPrimitive.Trigger>,
-    VariantProps<typeof tabsTriggerVariants> {}
+    VariantProps<typeof tabsTriggerVariants> {
+  asChild?: boolean;
+}
 
 function TabsTrigger({ className, variant, ...props }: TabsTriggerProps) {
   return (
