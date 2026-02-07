@@ -1,6 +1,5 @@
 "use client"
 
-import { useRouter, useSearchParams } from "next/navigation"
 import {
     Select,
     SelectContent,
@@ -8,31 +7,19 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { useTeamLoading } from "@/components/ui/team-loading-wrapper"
 import type { Team } from "@/lib/types"
 
 type TeamSelectorProps = {
     teams: Team[]
     currentTeam?: string
+    onTeamChange: (teamName: string) => void
 }
 
-export default function TeamSelector({ teams, currentTeam }: TeamSelectorProps) {
-    const router = useRouter()
-    const searchParams = useSearchParams()
-    const { startTransition } = useTeamLoading()
-
-    const handleTeamChange = (teamName: string) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set("team", teamName)
-        startTransition(() => {
-            router.push(`?${params.toString()}`)
-        })
-    }
-
+export default function TeamSelector({ teams, currentTeam, onTeamChange }: TeamSelectorProps) {
     return (
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center gap-2">
             <span className="text-sm font-medium">Team:</span>
-            <Select value={currentTeam} onValueChange={handleTeamChange}>
+            <Select value={currentTeam} onValueChange={onTeamChange}>
                 <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="All" />
                 </SelectTrigger>

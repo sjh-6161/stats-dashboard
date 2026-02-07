@@ -1,9 +1,14 @@
-import { getTeamRoundStats, getTeamBuyDefaults, getTeamPistolDefaults, getTeams } from "@/lib/services";
-import TeamSelector from "@/features/team-defaults/components/team-selector";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { TeamLoadingWrapper } from "@/components/ui/team-loading-wrapper";
-import TeamContentSection from "./team-content-section";
-import { getMapKills, getMapPlants } from "@/lib/services/maps.service";
+"use client"
+
+import { useState, useEffect } from "react"
+import TeamSelector from "@/features/team-defaults/components/team-selector"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
+import { TournamentSelector } from "@/components/ui/tournament-selector"
+import TeamContentSection from "./team-content-section"
+import { fetchTeamPageData } from "@/lib/actions"
+import { Spinner } from "@/components/ui/spinner"
+import type { Team, TeamDefault, MapKill, MapPlant } from "@/lib/types"
+import type { TeamRoundStats } from "@/lib/services"
 
 const map_colors: Record<string, string> = {
     "de_mirage": "bg-yellow-50",
@@ -28,8 +33,17 @@ const map_nice_names: Record<string, string> = {
 }
 
 type TeamPageProps = {
-    tournament: string;
-    team?: string;
+    tournaments: string[];
+};
+
+type TeamData = {
+    teams: Team[];
+    roundStats: TeamRoundStats[];
+    buy_defaults: TeamDefault[];
+    eco_defaults: TeamDefault[];
+    pistol_defaults: TeamDefault[];
+    plants: MapPlant[];
+    duels: MapKill[];
 };
 
 function formatRWP(won: number, total: number): string {
@@ -37,26 +51,38 @@ function formatRWP(won: number, total: number): string {
     return ((won / total) * 100).toFixed(1) + "%";
 }
 
-export default async function TeamPage({ tournament, team }: TeamPageProps) {
-    const teams = await getTeams();
+export default function TeamPage({ tournaments }: TeamPageProps) {
+    const [tournament, setTournament] = useState(tournaments[0] || '')
+    const [team, setTeam] = useState<string | undefined>(undefined)
+    const [data, setData] = useState<TeamData | null>(null)
+    const [loading, setLoading] = useState(true)
 
-    const roundStats = team ? await getTeamRoundStats(team, tournament) : [];
+    useEffect(() => {
+        setLoading(true)
+        fetchTeamPageData(tournament, team).then((result) => {
+            setData(result)
+            setLoading(false)
+        })
+    }, [tournament, team])
 
-    const buy_defaults = team ? await getTeamBuyDefaults(team, 20000, 500000, tournament) : [];
-    const eco_defaults = team ? await getTeamBuyDefaults(team, 0, 10000, tournament) : [];
-    const pistol_defaults = team ? await getTeamPistolDefaults(team, tournament) : [];
+    if (loading || !data) {
+        return (
+            <div className="flex items-center justify-center p-4">
+                <Spinner className="size-8" />
+            </div>
+        )
+    }
 
-    const overallStats = roundStats?.find(s => s.map === null);
-
-    const plants = team ? await getMapPlants(team, tournament) : [];
-    const duels = team ? await getMapKills(team, tournament) : [];
-
-    const map_names = [...new Set(roundStats.map(obj => obj.map).filter((m): m is string => m !== null))];
+    const overallStats = data.roundStats?.find(s => s.map === null);
+    const map_names = [...new Set(data.roundStats.map(obj => obj.map).filter((m): m is string => m !== null))];
 
     return (
-        <TeamLoadingWrapper>
-            <div className="flex justify-between items-center">
-                <TeamSelector teams={teams} currentTeam={team} />
+        <div>
+            <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center gap-4">
+                    <TournamentSelector tournaments={tournaments} value={tournament} onValueChange={setTournament} />
+                    <TeamSelector teams={data.teams} currentTeam={team} onTeamChange={setTeam} />
+                </div>
                 {overallStats && (
                     <div className="flex gap-2">
                         <div className={`items-center px-3 py-1 rounded shadow-sm flex flex-row`}>
@@ -90,7 +116,7 @@ export default async function TeamPage({ tournament, team }: TeamPageProps) {
                 <div>
                     <Tabs defaultValue={map_names[0] || ""}>
                         {map_names.map(map_name => {
-                            const mapStats = roundStats.find(s => s.map === map_name);
+                            const mapStats = data.roundStats.find(s => s.map === map_name);
                             if (!mapStats) return null;
                             return (
                                 <TabsContent value={map_name} key={map_name} className="mt-0">
@@ -100,11 +126,11 @@ export default async function TeamPage({ tournament, team }: TeamPageProps) {
                                         map_nice_names={map_nice_names}
                                         map_color={map_colors[map_name]}
                                         mapStats={mapStats}
-                                        pistol_defaults={pistol_defaults}
-                                        eco_defaults={eco_defaults}
-                                        buy_defaults={buy_defaults}
-                                        plants={plants}
-                                        duels={duels}
+                                        pistol_defaults={data.pistol_defaults}
+                                        eco_defaults={data.eco_defaults}
+                                        buy_defaults={data.buy_defaults}
+                                        plants={data.plants}
+                                        duels={data.duels}
                                     />
                                 </TabsContent>
                             );
@@ -112,6 +138,6 @@ export default async function TeamPage({ tournament, team }: TeamPageProps) {
                     </Tabs>
                 </div>
             )}
-        </TeamLoadingWrapper>
+        </div>
     );
 }

@@ -1,36 +1,46 @@
-import { getPlayerPositionStats, getTeams } from "@/lib/services";
-import { columns } from "./columns";
-import { PlayerPositionTable } from "./player-position-table";
+"use client"
+
+import { useState, useEffect } from "react"
+import { columns } from "./columns"
+import { PlayerPositionTable } from "./player-position-table"
+import { fetchPlayerPositionData } from "@/lib/actions"
+import { Spinner } from "@/components/ui/spinner"
+import type { PlayerPositionStat, Team } from "@/lib/types"
 
 type PlayerPositionPageProps = {
-    tournament: string;
-    team?: string;
+    tournaments: string[];
 };
 
-export default async function PlayerPositionPage({ tournament, team }: PlayerPositionPageProps) {
-    const teams = await getTeams();
+type PositionData = {
+    teams: Team[];
+    ctStats: PlayerPositionStat[];
+    tStats: PlayerPositionStat[];
+};
 
-    // Pass undefined if no team selected (or "all" is selected)
-    const teamFilter = team && team !== "all" ? team : undefined;
+export default function PlayerPositionPage({ tournaments }: PlayerPositionPageProps) {
+    const [tournament, setTournament] = useState(tournaments[0] || '')
+    const [team, setTeam] = useState<string | undefined>(undefined)
+    const [data, setData] = useState<PositionData | null>(null)
+    const [loading, setLoading] = useState(true)
 
-    const [ctStats, tStats] = await Promise.all([
-        getPlayerPositionStats(tournament, 'CT', teamFilter),
-        getPlayerPositionStats(tournament, 'TERRORIST', teamFilter)
-    ]);
+    useEffect(() => {
+        setLoading(true)
+        fetchPlayerPositionData(tournament, team).then((result) => {
+            setData(result)
+            setLoading(false)
+        })
+    }, [tournament, team])
 
-    if (ctStats.length === 0 && tStats.length === 0) {
+    const handleTeamChange = (teamName: string) => {
+        setTeam(teamName === "all" ? undefined : teamName)
+    }
+
+    if (loading || !data) {
         return (
-            <div className="p-4">
-                <PlayerPositionTable
-                    columns={columns}
-                    ctData={[]}
-                    tData={[]}
-                    teams={teams}
-                    currentTeam={team}
-                />
-                <p className="mt-4">No player position data available for this selection.</p>
+            <div className="flex items-center justify-center p-4">
+                <Spinner className="size-8" />
             </div>
-        );
+        )
     }
 
     return (
@@ -41,11 +51,15 @@ export default async function PlayerPositionPage({ tournament, team }: PlayerPos
             </p>
             <PlayerPositionTable
                 columns={columns}
-                ctData={ctStats}
-                tData={tStats}
-                teams={teams}
+                ctData={data.ctStats}
+                tData={data.tStats}
+                teams={data.teams}
                 currentTeam={team}
+                tournaments={tournaments}
+                selectedTournament={tournament}
+                onTournamentChange={setTournament}
+                onTeamChange={handleTeamChange}
             />
         </div>
-    );
+    )
 }

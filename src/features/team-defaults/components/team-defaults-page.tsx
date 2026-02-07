@@ -1,9 +1,14 @@
-import { getTeamBuyDefaults, getTeamPistolDefaults, getTeams } from "@/lib/services";
-import { columns } from "./columns";
-import { DataTable } from "@/components/data-table";
+"use client"
+
+import { useState, useEffect } from "react"
+import { columns } from "./columns"
+import { DataTable } from "@/components/data-table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import TeamSelector from "./team-selector";
-import { TeamLoadingWrapper } from "@/components/ui/team-loading-wrapper";
+import TeamSelector from "./team-selector"
+import { TournamentSelector } from "@/components/ui/tournament-selector"
+import { fetchTeamDefaultsData } from "@/lib/actions"
+import { Spinner } from "@/components/ui/spinner"
+import type { Team, TeamDefault } from "@/lib/types"
 
 const map_colors: Record<string, string> = {
     "de_mirage": "bg-yellow-50",
@@ -28,22 +33,46 @@ const map_nice_names: Record<string, string> = {
 }
 
 type TeamDefaultsPageProps = {
-    tournament: string;
-    team?: string;
+    tournaments: string[];
 };
 
-export default async function TeamDefaultsPage({ tournament, team }: TeamDefaultsPageProps) {
-    const teams = await getTeams();
+type DefaultsData = {
+    teams: Team[];
+    buy_defaults: TeamDefault[];
+    eco_defaults: TeamDefault[];
+    pistol_defaults: TeamDefault[];
+};
 
-    const buy_defaults = await getTeamBuyDefaults(team || null, 20000, 500000, tournament);
-    const eco_defaults = await getTeamBuyDefaults(team || null, 0, 10000, tournament);
-    const pistol_defaults = await getTeamPistolDefaults(team || null, tournament)
+export default function TeamDefaultsPage({ tournaments }: TeamDefaultsPageProps) {
+    const [tournament, setTournament] = useState(tournaments[0] || '')
+    const [team, setTeam] = useState<string | undefined>(undefined)
+    const [data, setData] = useState<DefaultsData | null>(null)
+    const [loading, setLoading] = useState(true)
 
-    const map_names: string[] = [...new Set(buy_defaults.map(obj => obj.map_name))];
+    useEffect(() => {
+        setLoading(true)
+        fetchTeamDefaultsData(tournament, team).then((result) => {
+            setData(result)
+            setLoading(false)
+        })
+    }, [tournament, team])
+
+    if (loading || !data) {
+        return (
+            <div className="flex items-center justify-center p-4">
+                <Spinner className="size-8" />
+            </div>
+        )
+    }
+
+    const map_names: string[] = [...new Set(data.buy_defaults.map(obj => obj.map_name))];
 
     return (
-        <TeamLoadingWrapper>
-            <TeamSelector teams={teams} currentTeam={team} />
+        <div>
+            <div className="flex items-center gap-4 mb-4">
+                <TournamentSelector tournaments={tournaments} value={tournament} onValueChange={setTournament} />
+                <TeamSelector teams={data.teams} currentTeam={team} onTeamChange={setTeam} />
+            </div>
             <Tabs defaultValue={map_names[0] || ""}>
                 <TabsList>
                 {map_names.map(map_name => {
@@ -59,28 +88,28 @@ export default async function TeamDefaultsPage({ tournament, team }: TeamDefault
                                 <div className='container mx-auto'>
                                     <div className="text-2xl mb-4">Pistol Defaults</div>
                                     <div className="text-2xl mb-4 bg-blue-50 overflow-hidden rounded-md">
-                                        <DataTable columns={columns} data={pistol_defaults.filter(row => row.map_name == map_name && row.side == "CT")} />
+                                        <DataTable columns={columns} data={data.pistol_defaults.filter(row => row.map_name == map_name && row.side == "CT")} />
                                     </div>
                                     <div className="text-2xl mb-4 bg-amber-50 overflow-hidden rounded-md">
-                                        <DataTable columns={columns} data={pistol_defaults.filter(row => row.map_name == map_name && row.side == "TERRORIST")} />
+                                        <DataTable columns={columns} data={data.pistol_defaults.filter(row => row.map_name == map_name && row.side == "TERRORIST")} />
                                     </div>
                                 </div>
                                 <div className='container mx-auto'>
                                     <div className="text-2xl mb-4">Eco Defaults</div>
                                     <div className="text-2xl mb-4 bg-blue-50 overflow-hidden rounded-md">
-                                        <DataTable columns={columns} data={eco_defaults.filter(row => row.map_name == map_name && row.side == "CT")} />
+                                        <DataTable columns={columns} data={data.eco_defaults.filter(row => row.map_name == map_name && row.side == "CT")} />
                                     </div>
                                     <div className="text-2xl mb-4 bg-amber-50 overflow-hidden rounded-md">
-                                        <DataTable columns={columns} data={eco_defaults.filter(row => row.map_name == map_name && row.side == "TERRORIST")} />
+                                        <DataTable columns={columns} data={data.eco_defaults.filter(row => row.map_name == map_name && row.side == "TERRORIST")} />
                                     </div>
                                 </div>
                                 <div className='container mx-auto'>
                                     <div className="text-2xl mb-4">Full Buy Defaults</div>
                                     <div className="text-2xl mb-4 bg-blue-50 overflow-hidden rounded-md">
-                                        <DataTable columns={columns} data={buy_defaults.filter(row => row.map_name == map_name && row.side == "CT")} />
+                                        <DataTable columns={columns} data={data.buy_defaults.filter(row => row.map_name == map_name && row.side == "CT")} />
                                     </div>
                                     <div className="text-2xl mb-4 bg-amber-50 overflow-hidden rounded-md">
-                                        <DataTable columns={columns} data={buy_defaults.filter(row => row.map_name == map_name && row.side == "TERRORIST")} />
+                                        <DataTable columns={columns} data={data.buy_defaults.filter(row => row.map_name == map_name && row.side == "TERRORIST")} />
                                     </div>
                                 </div>
                             </div>
@@ -89,6 +118,6 @@ export default async function TeamDefaultsPage({ tournament, team }: TeamDefault
                 )
             })}
             </Tabs>
-        </TeamLoadingWrapper>
+        </div>
     )
 }

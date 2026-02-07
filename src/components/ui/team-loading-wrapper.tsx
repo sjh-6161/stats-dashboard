@@ -18,6 +18,10 @@ export function useTeamLoading() {
   return context
 }
 
+export function useOptionalTeamLoading() {
+  return useContext(TeamLoadingContext)
+}
+
 type TeamLoadingWrapperProps = {
   children: ReactNode
 }

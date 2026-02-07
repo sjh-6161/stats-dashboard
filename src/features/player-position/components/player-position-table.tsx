@@ -12,7 +12,6 @@ import {
     SortingState,
     getSortedRowModel,
 } from "@tanstack/react-table"
-import { useRouter, useSearchParams } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -33,6 +32,7 @@ import {
 } from "@/components/ui/table"
 
 import { PlayerPositionStat, Team } from "@/lib/types"
+import { TournamentSelector } from "@/components/ui/tournament-selector"
 
 interface PlayerPositionTableProps {
     columns: ColumnDef<PlayerPositionStat>[]
@@ -40,6 +40,10 @@ interface PlayerPositionTableProps {
     tData: PlayerPositionStat[]
     teams: Team[]
     currentTeam?: string
+    tournaments: string[]
+    selectedTournament: string
+    onTournamentChange: (tournament: string) => void
+    onTeamChange: (teamName: string) => void
 }
 
 export function PlayerPositionTable({
@@ -48,25 +52,16 @@ export function PlayerPositionTable({
     tData,
     teams,
     currentTeam,
+    tournaments,
+    selectedTournament,
+    onTournamentChange,
+    onTeamChange,
 }: PlayerPositionTableProps) {
-    const router = useRouter()
-    const searchParams = useSearchParams()
-
     const [side, setSide] = React.useState<'CT' | 'T'>('CT')
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
 
     const data = side === 'CT' ? ctData : tData
-
-    const handleTeamChange = (teamName: string) => {
-        const params = new URLSearchParams(searchParams.toString())
-        if (teamName === "all") {
-            params.delete("positionTeam")
-        } else {
-            params.set("positionTeam", teamName)
-        }
-        router.push(`?${params.toString()}`)
-    }
 
     const table = useReactTable({
         data,
@@ -91,9 +86,10 @@ export function PlayerPositionTable({
     return (
         <div>
             <div className="flex items-center gap-4 mb-4">
+                <TournamentSelector tournaments={tournaments} value={selectedTournament} onValueChange={onTournamentChange} />
                 <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">Team:</span>
-                    <Select value={currentTeam || "all"} onValueChange={handleTeamChange}>
+                    <Select value={currentTeam || "all"} onValueChange={onTeamChange}>
                         <SelectTrigger className="w-[200px]">
                             <SelectValue placeholder="All Teams" />
                         </SelectTrigger>

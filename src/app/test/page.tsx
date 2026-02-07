@@ -1,14 +1,9 @@
 import { KDPlots } from "@/components/map-visualization";
 import { getTournaments } from "@/lib/services";
 
-type PageProps = {
-  searchParams: Promise<{ tournament?: string }>;
-};
-
-export default async function TestPage({ searchParams }: PageProps) {
-  const params = await searchParams;
+export default async function TestPage() {
   const tournaments = await getTournaments();
-  const tournament = params.tournament || tournaments[0]?.name || '';
+  const tournament = tournaments[0]?.name || '';
 
   if (!tournament) {
     return (

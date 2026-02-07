@@ -1,16 +1,11 @@
 import TSideStatsPage from "@/features/tside-stats";
 import { getTournaments } from "@/lib/services";
 
-type PageProps = {
-  searchParams: Promise<{ tournament?: string }>;
-};
-
-export default async function TSideRoute({ searchParams }: PageProps) {
-  const params = await searchParams;
+export default async function TSideRoute() {
   const tournaments = await getTournaments();
-  const tournament = params.tournament || tournaments[0]?.name || '';
+  const tournamentNames = tournaments.map(t => t.name);
 
-  if (!tournament) {
+  if (tournamentNames.length === 0) {
     return (
       <div className="flex items-center justify-center">
         <p>No tournaments available.</p>
@@ -18,5 +13,5 @@ export default async function TSideRoute({ searchParams }: PageProps) {
     );
   }
 
-  return <TSideStatsPage tournament={tournament} />;
+  return <TSideStatsPage tournaments={tournamentNames} />;
 }

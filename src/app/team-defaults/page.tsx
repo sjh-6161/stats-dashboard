@@ -1,16 +1,11 @@
 import TeamDefaultsPage from "@/features/team-defaults";
 import { getTournaments } from "@/lib/services";
 
-type PageProps = {
-  searchParams: Promise<{ tournament?: string; team?: string }>;
-};
-
-export default async function TeamDefaultsRoute({ searchParams }: PageProps) {
-  const params = await searchParams;
+export default async function TeamDefaultsRoute() {
   const tournaments = await getTournaments();
-  const tournament = params.tournament || tournaments[0]?.name || '';
+  const tournamentNames = tournaments.map(t => t.name);
 
-  if (!tournament) {
+  if (tournamentNames.length === 0) {
     return (
       <div className="flex items-center justify-center">
         <p>No tournaments available.</p>
@@ -18,5 +13,5 @@ export default async function TeamDefaultsRoute({ searchParams }: PageProps) {
     );
   }
 
-  return <TeamDefaultsPage tournament={tournament} team={params.team} />;
+  return <TeamDefaultsPage tournaments={tournamentNames} />;
 }

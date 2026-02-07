@@ -1,16 +1,11 @@
 import PlayerStatsPage from "@/features/player-stats";
 import { getTournaments } from "@/lib/services";
 
-type PageProps = {
-  searchParams: Promise<{ tournament?: string }>;
-};
-
-export default async function Home({ searchParams }: PageProps) {
-  const params = await searchParams;
+export default async function Home() {
   const tournaments = await getTournaments();
-  const tournament = params.tournament || tournaments[0]?.name || '';
+  const tournamentNames = tournaments.map(t => t.name);
 
-  if (!tournament) {
+  if (tournamentNames.length === 0) {
     return (
       <div className="flex items-center justify-center">
         <p>No tournaments available. Please add tournament data to the database.</p>
@@ -18,5 +13,5 @@ export default async function Home({ searchParams }: PageProps) {
     );
   }
 
-  return <PlayerStatsPage tournament={tournament} />;
+  return <PlayerStatsPage tournaments={tournamentNames} />;
 }
