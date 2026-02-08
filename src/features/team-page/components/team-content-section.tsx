@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import TeamDefaultsSection from "./team-defaults-section";
 import TeamMapSection from "./team-map-section";
 import { TabsList, TabsTrigger, Tabs } from "@/components/ui/tabs";
-import type { MapPlant, MapKill, TeamDefault, RoundType, DefaultKey } from "@/lib/types";
+import type { MapPlant, MapKill, MapGrenade, TeamDefault, RoundType, DefaultKey } from "@/lib/types";
 
 type MapStats = {
     maps_won: number;
@@ -31,6 +31,7 @@ type TeamContentSectionProps = {
     buy_defaults: TeamDefault[];
     plants: MapPlant[];
     duels: MapKill[];
+    grenades: MapGrenade[];
 };
 
 function formatRWP(won: number, total: number): string {
@@ -48,7 +49,8 @@ export default function TeamContentSection({
     eco_defaults,
     buy_defaults,
     plants,
-    duels
+    duels,
+    grenades
 }: TeamContentSectionProps) {
     const [side, setSide] = useState<"CT" | "TERRORIST">("CT");
     const [defaultType, setDefaultType] = useState<RoundType>("all");
@@ -158,6 +160,7 @@ export default function TeamContentSection({
                         side={side}
                         plants={plants}
                         duels={duels}
+                        grenades={grenades}
                         defaultType={defaultType}
                         selectedDefaults={selectedDefaults}
                     />

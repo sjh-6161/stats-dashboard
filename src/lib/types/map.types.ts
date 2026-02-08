@@ -1,6 +1,7 @@
 export type MapGrenade = {
+    map_name: string,
     steamid: string,
-    team: 'CT' | 'TERRORIST',
+    team_side: 'CT' | 'TERRORIST',
     grenade_type: string,
     start_x: number,
     start_y: number,
@@ -10,6 +11,11 @@ export type MapGrenade = {
     end_z: number,
     start_time: number,
     end_time: number,
+    plant_time: number | null,
+    round_type: 'pistol' | 'eco' | 'buy',
+    num_a: number,
+    num_mid: number,
+    num_b: number,
 }
 
 export type MapKill = {

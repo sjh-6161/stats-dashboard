@@ -1,7 +1,7 @@
 "use server"
 
 import { getPlayerKDStats, getPlayerPositionStats, getTeams, getTeamBuyDefaults, getTeamPistolDefaults, getTeamRoundStats, getTeamTSideStats, getTournaments } from "./services";
-import { getMapKills, getMapPlants } from "./services/maps.service";
+import { getMapKills, getMapPlants, getMapGrenades } from "./services/maps.service";
 
 export async function fetchTournaments() {
     const tournaments = await getTournaments();
@@ -38,7 +38,8 @@ export async function fetchTeamPageData(tournament: string, team?: string) {
     const pistol_defaults = team ? await getTeamPistolDefaults(team, tournament) : [];
     const plants = team ? await getMapPlants(team, tournament) : [];
     const duels = team ? await getMapKills(team, tournament) : [];
-    return { teams, roundStats, buy_defaults, eco_defaults, pistol_defaults, plants, duels };
+    const grenades = team ? await getMapGrenades(team, tournament) : [];
+    return { teams, roundStats, buy_defaults, eco_defaults, pistol_defaults, plants, duels, grenades };
 }
 
 export async function fetchTSideStats(tournament: string) {

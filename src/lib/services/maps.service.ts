@@ -1,14 +1,49 @@
 import { sql } from '@/lib/db';
 import type { MapGrenade, MapKill, MapPlant } from '@/lib/types';
 
-export async function getMapGrenades(mapName: string, currentTeam: string, tournament: string): Promise<MapGrenade[]> {
+export async function getMapGrenades(currentTeam: string, tournament: string): Promise<MapGrenade[]> {
     const grenades = await sql<MapGrenade[]>`
-        SELECT grenade.player_id AS steamid, team, grenade_type, start_x, start_y, start_z, end_x, end_y, end_y, CAST(grenade.start_tick - round.freeze_time_end_tick AS FLOAT) / 64.0 AS start_time, CAST(grenade.end_tick - round.freeze_time_end_tick AS FLOAT) / 64.0 AS end_time
+        WITH round_defaults AS (
+            SELECT
+                pd.round_id,
+                pd.team_id,
+                COUNT(CASE WHEN pd.zone = 'A' THEN 1 END) AS num_a,
+                COUNT(CASE WHEN pd.zone = 'Mid' THEN 1 END) AS num_mid,
+                COUNT(CASE WHEN pd.zone = 'B' THEN 1 END) AS num_b
+            FROM player_default pd
+            GROUP BY pd.round_id, pd.team_id
+        ),
+        buys AS (
+            SELECT round_id, team_id, SUM(equipment_value) AS sum
+            FROM buy
+            GROUP BY round_id, team_id
+        )
+        SELECT
+            match.map AS map_name,
+            grenade.player_id AS steamid,
+            grenade.team AS team_side,
+            grenade_type,
+            start_x, start_y, start_z,
+            end_x, end_y, end_z,
+            CAST(grenade.start_tick - round.freeze_time_end_tick AS FLOAT) / 64.0 AS start_time,
+            CAST(grenade.end_tick - round.freeze_time_end_tick AS FLOAT) / 64.0 AS end_time,
+            CAST(plant.tick - round.freeze_time_end_tick AS FLOAT) / 64.0 AS plant_time,
+            CASE
+                WHEN round.t_rounds + round.ct_rounds = 0 OR round.t_rounds + round.ct_rounds = 12 THEN 'pistol'
+                WHEN COALESCE(team_buy.sum, 0) < 10000 THEN 'eco'
+                ELSE 'buy'
+            END AS round_type,
+            COALESCE(rd.num_a, 0) AS num_a,
+            COALESCE(rd.num_mid, 0) AS num_mid,
+            COALESCE(rd.num_b, 0) AS num_b
         FROM grenade
         INNER JOIN match ON match.id = grenade.match_id
         INNER JOIN round ON round.id = grenade.round_id
         INNER JOIN team ON team.id = grenade.team_id
-        WHERE match.map = ${mapName} AND team.name = ${currentTeam} AND match.tournament = ${tournament};
+        LEFT JOIN plant ON plant.round_id = grenade.round_id
+        LEFT JOIN buys team_buy ON team_buy.round_id = grenade.round_id AND team_buy.team_id = grenade.team_id
+        LEFT JOIN round_defaults rd ON rd.round_id = grenade.round_id AND rd.team_id = grenade.team_id
+        WHERE team.name = ${currentTeam} AND match.tournament = ${tournament}
     `
 
     return grenades

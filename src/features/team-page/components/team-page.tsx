@@ -7,7 +7,7 @@ import { TournamentSelector } from "@/components/ui/tournament-selector"
 import TeamContentSection from "./team-content-section"
 import { fetchTeamPageData } from "@/lib/actions"
 import { Spinner } from "@/components/ui/spinner"
-import type { Team, TeamDefault, MapKill, MapPlant } from "@/lib/types"
+import type { Team, TeamDefault, MapKill, MapPlant, MapGrenade } from "@/lib/types"
 import type { TeamRoundStats } from "@/lib/services"
 
 const map_colors: Record<string, string> = {
@@ -44,6 +44,7 @@ type TeamData = {
     pistol_defaults: TeamDefault[];
     plants: MapPlant[];
     duels: MapKill[];
+    grenades: MapGrenade[];
 };
 
 function formatRWP(won: number, total: number): string {
@@ -131,6 +132,7 @@ export default function TeamPage({ tournaments }: TeamPageProps) {
                                         buy_defaults={data.buy_defaults}
                                         plants={data.plants}
                                         duels={data.duels}
+                                        grenades={data.grenades}
                                     />
                                 </TabsContent>
                             );

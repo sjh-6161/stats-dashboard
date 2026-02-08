@@ -3,7 +3,7 @@
 import { Map, positionTransformX, positionTransformY } from "@/components/map-visualization/map"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
-import { MapKill, MapPlant, RoundType, DefaultKey } from "@/lib/types";
+import { MapKill, MapPlant, MapGrenade, RoundType, DefaultKey } from "@/lib/types";
 import { useState, useMemo } from "react";
 
 const SiteColors: Record<string, string> = {
@@ -16,6 +16,7 @@ type TeamMapSectionProps = {
     side: "CT" | "TERRORIST",
     plants: MapPlant[];
     duels: MapKill[];
+    grenades: MapGrenade[];
     defaultType: RoundType;
     selectedDefaults: Set<DefaultKey>;
 }
@@ -23,12 +24,29 @@ type TeamMapSectionProps = {
 type MapType = "utility" | "duels" | "plants";
 type TimingType = "early" | "preplant" | "postplant";
 type DuelDisplayMode = "both" | "lines" | "endpoints";
+type GrenadeFilter = "all" | "smoke" | "molotov" | "flash" | "he";
+
+const GRENADE_COLORS: Record<string, string> = {
+    "smoke": "#9CA3AF",
+    "molotov": "#EF4444",
+    "flash": "#EAB308",
+    "he": "#22C55E",
+};
+
+function getGrenadeCategory(grenade_type: string): "smoke" | "molotov" | "flash" | "he" {
+    const t = grenade_type.toLowerCase();
+    if (t.includes("smoke")) return "smoke";
+    if (t.includes("molotov") || t.includes("inc")) return "molotov";
+    if (t.includes("flash")) return "flash";
+    return "he";
+}
 
 export default function TeamMapSection({
     map_name,
     side,
     plants,
     duels,
+    grenades,
     defaultType,
     selectedDefaults
 }: TeamMapSectionProps) {
@@ -36,8 +54,9 @@ export default function TeamMapSection({
     const [timingType, setTimingType] = useState<TimingType>("early");
     const [duelDisplayMode, setDuelDisplayMode] = useState<DuelDisplayMode>("both");
     const [timeFilter, setTimeFilter] = useState<number>(60);
+    const [grenadeFilter, setGrenadeFilter] = useState<GrenadeFilter>("all");
 
-    // Helper to check if a duel/plant matches the selected defaults
+    // Helper to check if a duel/plant/grenade matches the selected defaults
     const matchesSelectedDefaults = useMemo(() => {
         return (item: { round_type: string; num_a: number; num_mid: number; num_b: number }) => {
             if (defaultType === 'all') {
@@ -106,6 +125,47 @@ export default function TeamMapSection({
             });
     }, [plants, map_name, defaultType, matchesSelectedDefaults]);
 
+    const filteredGrenades = useMemo(() => {
+        return grenades
+            .filter(g => g.map_name === map_name)
+            .filter(g => g.team_side === side)
+            .filter(g => {
+                if (defaultType === 'all') return true;
+                return g.round_type === defaultType;
+            })
+            .filter(g => matchesSelectedDefaults(g))
+            .filter(g => {
+                if (grenadeFilter === "all") return true;
+                return getGrenadeCategory(g.grenade_type) === grenadeFilter;
+            })
+            .filter(g => {
+                // All grenade end_times include the full effect duration
+                const expireTime = g.end_time;
+                switch (timingType) {
+                    case "early":
+                        // Include grenades that have started by the slider time and haven't expired
+                        return g.start_time <= timeFilter;
+                    case "preplant": {
+                        // Show grenades visible in the window [plant_time - timeFilter, plant_time]
+                        if (g.plant_time === null) return false;
+                        const windowStart = g.plant_time - timeFilter;
+                        const windowEnd = g.plant_time;
+                        // Grenade is relevant if it's active (thrown and not expired) during the window
+                        return g.start_time <= windowEnd && expireTime >= windowStart;
+                    }
+                    case "postplant": {
+                        // Show grenades visible in the window [plant_time, plant_time + timeFilter]
+                        if (g.plant_time === null) return false;
+                        const windowStart = g.plant_time;
+                        const windowEnd = g.plant_time + timeFilter;
+                        return g.start_time <= windowEnd && expireTime >= windowStart;
+                    }
+                    default:
+                        return true;
+                }
+            });
+    }, [grenades, map_name, side, defaultType, matchesSelectedDefaults, grenadeFilter, timingType, timeFilter]);
+
     const getTimingLabel = () => {
         switch (timingType) {
             case "early":
@@ -131,13 +191,58 @@ export default function TeamMapSection({
                         <TabsTrigger value="plants">Plants</TabsTrigger>
                     </TabsList>
                 </Tabs>
-                <Tabs value={timingType} onValueChange={(v) => setTimingType(v as TimingType)} className="mb-3">
+                {mapType != "plants" && <Tabs value={timingType} onValueChange={(v) => setTimingType(v as TimingType)} className="mb-2">
                     <TabsList>
                         <TabsTrigger value="early">Early Round</TabsTrigger>
                         <TabsTrigger value="preplant">Pre-Plant</TabsTrigger>
                         <TabsTrigger value="postplant">Post-Plant</TabsTrigger>
                     </TabsList>
-                </Tabs>
+                </Tabs>}
+
+                {mapType === "utility" && (
+                    <>
+                        <Tabs value={grenadeFilter} onValueChange={(v) => setGrenadeFilter(v as GrenadeFilter)} className="mb-3">
+                            <TabsList>
+                                <TabsTrigger value="all">All</TabsTrigger>
+                                <TabsTrigger value="smoke">Smokes</TabsTrigger>
+                                <TabsTrigger value="molotov">Molotovs</TabsTrigger>
+                                <TabsTrigger value="he">HEs</TabsTrigger>
+                                <TabsTrigger value="flash">Flashbangs</TabsTrigger>
+                            </TabsList>
+                        </Tabs>
+
+                        <div className="mb-2">
+                            <div className="text-sm text-gray-600 mb-1">{getTimingLabel()}</div>
+                            <Slider
+                                value={[timeFilter]}
+                                onValueChange={(v) => setTimeFilter(v[0])}
+                                min={0}
+                                max={120}
+                                step={1}
+                                className="w-full"
+                            />
+                        </div>
+
+                        <div className="flex gap-4 text-sm mt-3 flex-wrap">
+                            <div className="flex items-center gap-1">
+                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: GRENADE_COLORS.smoke }}></div>
+                                <span>Smoke</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: GRENADE_COLORS.molotov }}></div>
+                                <span>Molotov</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: GRENADE_COLORS.he }}></div>
+                                <span>HE</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: GRENADE_COLORS.flash }}></div>
+                                <span>Flashbang</span>
+                            </div>
+                        </div>
+                    </>
+                )}
 
                 {mapType === "duels" && (
                     <>
@@ -187,6 +292,126 @@ export default function TeamMapSection({
                         />
                     ))}
 
+                    {mapType === "utility" && filteredGrenades.map((g, i) => {
+                        const category = getGrenadeCategory(g.grenade_type);
+                        const color = GRENADE_COLORS[category];
+                        const startX = positionTransformX(g.start_x, map_name);
+                        const startY = positionTransformY(g.start_y, map_name);
+                        const endX = positionTransformX(g.end_x, map_name);
+                        const endY = positionTransformY(g.end_y, map_name);
+
+                        // Use slider as time cursor for trajectory animation in all modes
+                        let currentTime: number;
+                        if (timingType === "early") {
+                            currentTime = timeFilter;
+                        } else if (timingType === "preplant") {
+                            // Cursor at timeFilter seconds before plant
+                            currentTime = (g.plant_time ?? 0) - timeFilter;
+                        } else {
+                            // postplant: window is [plant_time, plant_time + timeFilter], cursor at end
+                            currentTime = (g.plant_time ?? 0) + timeFilter;
+                        }
+
+                        // Smoke/HE end_tick includes time after landing.
+                        // Subtract effect duration to get actual flight time.
+                        const SMOKE_EFFECT_DURATION = 22;
+                        const HE_FLIGHT_TIME = 1.6;
+                        const rawDuration = g.end_time - g.start_time;
+                        let flightDuration: number;
+                        if (category === "smoke") {
+                            flightDuration = Math.max(rawDuration - SMOKE_EFFECT_DURATION, 0.001);
+                        } else if (category === "he") {
+                            flightDuration = HE_FLIGHT_TIME;
+                        } else {
+                            flightDuration = Math.max(rawDuration, 0.001);
+                        }
+                        const landTime = g.start_time + flightDuration;
+                        const isInFlight = currentTime >= g.start_time && currentTime <= landTime;
+                        const hasLanded = currentTime > landTime;
+                        const timeSinceLanding = hasLanded ? currentTime - landTime : 0;
+                        // Flash/HE get a minimum persist time so they're visible after popping
+                        const MIN_FLASH_HE_PERSIST = 5;
+                        const dataExpiry = g.end_time;
+                        const expiryTime = (category === "flash" || category === "he")
+                            ? Math.max(dataExpiry, landTime + MIN_FLASH_HE_PERSIST)
+                            : dataExpiry;
+                        const isExpired = currentTime > expiryTime;
+
+                        if (isExpired) return null;
+                        if (currentTime < g.start_time) return null;
+
+                        // Calculate trajectory progress
+                        const progress = isInFlight
+                            ? Math.min(1, (currentTime - g.start_time) / flightDuration)
+                            : 1;
+
+                        const currentX = startX + (endX - startX) * progress;
+                        const currentY = startY + (endY - startY) * progress;
+
+                        // Determine visibility and opacity based on grenade state
+                        let opacity = 0.6;
+                        let showTrajectory = true;
+                        let showEndCircle = false;
+                        let circleRadius = 0.5;
+                        let circleColor = color;
+
+                        if (hasLanded) {
+                            showEndCircle = true;
+                            showTrajectory = false;
+                            const effectDuration = expiryTime - landTime;
+                            const fadeProgress = effectDuration > 0 ? timeSinceLanding / effectDuration : 1;
+                            if (category === "smoke") {
+                                circleRadius = 1.5;
+                                opacity = 0.4;
+                            } else if (category === "molotov") {
+                                circleRadius = 1.0;
+                                opacity = 0.4;
+                            } else if (category === "flash") {
+                                circleRadius = 1.2;
+                                circleColor = "#FFFFFF";
+                                opacity = 0.5 * (1 - fadeProgress);
+                            } else {
+                                // HE
+                                circleRadius = 1.2;
+                                opacity = 0.5 * (1 - fadeProgress);
+                            }
+                        }
+
+                        return (
+                            <g key={i}>
+                                {showTrajectory && (
+                                    <line
+                                        x1={startX}
+                                        y1={startY}
+                                        x2={isInFlight ? currentX : endX}
+                                        y2={isInFlight ? currentY : endY}
+                                        stroke={color}
+                                        strokeWidth={0.15}
+                                        opacity={opacity}
+                                    />
+                                )}
+                                {isInFlight && (
+                                    <circle
+                                        cx={currentX}
+                                        cy={currentY}
+                                        r={0.3}
+                                        fill={color}
+                                        opacity={opacity}
+                                    />
+                                )}
+                                {showEndCircle && (
+                                    <circle
+                                        cx={endX}
+                                        cy={endY}
+                                        r={circleRadius}
+                                        fill={circleColor}
+                                        opacity={opacity * 0.6}
+                                    />
+                                )}
+                            </g>
+                        );
+                    })}
+
                     {mapType === "duels" && filteredDuels.map((d, i) => {
                         const isTeamKill = d.attacker_this_team === true;
 
@@ -226,14 +451,6 @@ export default function TeamMapSection({
                                             r={0.4}
                                             className={`${fillColor} opacity-40`}
                                         />
-
-                                        {/* Opponent position - hollow circle (ring) */}
-                                        {/* <circle
-                                            cx={opponentX}
-                                            cy={opponentY}
-                                            r={0.35}
-                                            className={`${strokeColor} stroke-[0.1] fill-none opacity-25`}
-                                        /> */}
                                     </>
                                 )}
                             </g>
