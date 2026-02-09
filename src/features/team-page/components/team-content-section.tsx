@@ -63,22 +63,27 @@ export default function TeamContentSection({
     const allDefaultKeys = useMemo(() => {
         const keys = new Set<DefaultKey>();
 
-        const addKeysFromDefaults = (defaults: TeamDefault[], roundType: 'pistol' | 'eco' | 'buy') => {
-            defaults
+        if (defaultType === 'all') {
+            // In "all" mode, the table aggregates by setup and uses "-all" suffix keys
+            const setups = new Set<string>();
+            const collectSetups = (defaults: TeamDefault[]) => {
+                defaults
+                    .filter(d => d.map_name === map_name && d.side === side)
+                    .forEach(d => setups.add(`${d.num_a}-${d.num_mid}-${d.num_b}`));
+            };
+            collectSetups(pistol_defaults);
+            collectSetups(eco_defaults);
+            collectSetups(buy_defaults);
+            setups.forEach(setup => keys.add(`${setup}-all` as DefaultKey));
+        } else {
+            const dataSource = defaultType === 'pistol' ? pistol_defaults
+                : defaultType === 'eco' ? eco_defaults
+                : buy_defaults;
+            dataSource
                 .filter(d => d.map_name === map_name && d.side === side)
                 .forEach(d => {
-                    keys.add(`${d.num_a}-${d.num_mid}-${d.num_b}-${roundType}` as DefaultKey);
+                    keys.add(`${d.num_a}-${d.num_mid}-${d.num_b}-${defaultType}` as DefaultKey);
                 });
-        };
-
-        if (defaultType === 'all' || defaultType === 'pistol') {
-            addKeysFromDefaults(pistol_defaults, 'pistol');
-        }
-        if (defaultType === 'all' || defaultType === 'eco') {
-            addKeysFromDefaults(eco_defaults, 'eco');
-        }
-        if (defaultType === 'all' || defaultType === 'buy') {
-            addKeysFromDefaults(buy_defaults, 'buy');
         }
 
         return keys;
