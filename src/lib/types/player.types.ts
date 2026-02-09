@@ -20,6 +20,15 @@ export type WPAStat = {
     rounds: number,
 }
 
+export type TeamPlayerPosition = {
+    name: string,
+    a: number,
+    mid: number,
+    b: number,
+    map_name: string,
+    side: string,
+}
+
 // Player position stats - uses dynamic keys based on map names
 // Keys will be in format: {mapShortName}_{position} (e.g., mirage_a, mirage_mid, mirage_b)
 export type PlayerPositionStat = {

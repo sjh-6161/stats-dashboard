@@ -1,5 +1,5 @@
 // Player services
-export { getPlayerKDStats, getPlayerWPAStats, getPlayerPositionStats } from './players.service';
+export { getPlayerKDStats, getPlayerWPAStats, getPlayerPositionStats, getTeamMapPlayerPositions } from './players.service';
 
 // Team services
 export {

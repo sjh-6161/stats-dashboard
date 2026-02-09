@@ -4,7 +4,8 @@ import { useState, useMemo, useEffect } from "react";
 import TeamDefaultsSection from "./team-defaults-section";
 import TeamMapSection from "./team-map-section";
 import { TabsList, TabsTrigger, Tabs } from "@/components/ui/tabs";
-import type { MapPlant, MapKill, MapGrenade, TeamDefault, RoundType, DefaultKey } from "@/lib/types";
+import type { MapPlant, MapKill, MapGrenade, TeamDefault, RoundType, DefaultKey, TeamPlayerPosition } from "@/lib/types";
+import TeamPlayerPositionsSection from "./team-player-positions-section";
 
 type MapStats = {
     maps_won: number;
@@ -32,6 +33,7 @@ type TeamContentSectionProps = {
     plants: MapPlant[];
     duels: MapKill[];
     grenades: MapGrenade[];
+    playerPositions: TeamPlayerPosition[];
 };
 
 function formatRWP(won: number, total: number): string {
@@ -50,7 +52,8 @@ export default function TeamContentSection({
     buy_defaults,
     plants,
     duels,
-    grenades
+    grenades,
+    playerPositions
 }: TeamContentSectionProps) {
     const [side, setSide] = useState<"CT" | "TERRORIST">("CT");
     const [defaultType, setDefaultType] = useState<RoundType>("all");
@@ -141,7 +144,7 @@ export default function TeamContentSection({
                 </Tabs>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 mt-5">
+            <div className="grid grid-cols-3 gap-4 mt-5 mb-3">
                 <div>
                     <TeamDefaultsSection
                         map_name={map_name}
@@ -152,6 +155,11 @@ export default function TeamContentSection({
                         defaultType={defaultType}
                         selectedDefaults={selectedDefaults}
                         onSelectionChange={setSelectedDefaults}
+                    />
+                    <TeamPlayerPositionsSection
+                        map_name={map_name}
+                        side={side}
+                        playerPositions={playerPositions}
                     />
                 </div>
                 <div className="col-span-2">

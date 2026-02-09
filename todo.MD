@@ -2,7 +2,6 @@ Priority
 
 
 High
-- Add utility functionality to the map. 
 
 Medium
 - Add upper / lower toggle on map for maps with upper / lower radars (i.e. nuke)

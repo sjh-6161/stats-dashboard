@@ -1,5 +1,5 @@
 import { sql } from '@/lib/db';
-import type { KDStat, WPAStat, PlayerPositionStat } from '@/lib/types';
+import type { KDStat, WPAStat, PlayerPositionStat, TeamPlayerPosition } from '@/lib/types';
 import { ACTIVE_DUTY_MAPS, type ActiveDutyMap } from '@/lib/config/maps';
 
 export async function getPlayerKDStats(tournament: string): Promise<KDStat[]> {
@@ -200,4 +200,34 @@ export async function getPlayerPositionStats(tournament: string, side: 'CT' | 'T
     }
 
     return Array.from(playerMap.values());
+}
+
+export async function getTeamMapPlayerPositions(teamName: string, tournament: string): Promise<TeamPlayerPosition[]> {
+    const rawStats = await sql<{ name: string, map: string, side: string, total_rounds: number, a_count: number, mid_count: number, b_count: number }[]>`
+        SELECT
+            player.name,
+            match.map,
+            pd.side,
+            COUNT(*) AS total_rounds,
+            COUNT(CASE WHEN pd.zone = 'A' THEN 1 END) AS a_count,
+            COUNT(CASE WHEN pd.zone = 'Mid' THEN 1 END) AS mid_count,
+            COUNT(CASE WHEN pd.zone = 'B' THEN 1 END) AS b_count
+        FROM player_default pd
+        INNER JOIN player ON player.steam_id = pd.player_id
+        INNER JOIN match ON match.id = pd.match_id
+        INNER JOIN team ON team.id = pd.team_id
+        WHERE match.tournament = ${tournament}
+        AND team.name = ${teamName}
+        GROUP BY player.name, match.map, pd.side
+        ORDER BY player.name, match.map
+    `;
+
+    return rawStats.map(row => ({
+        name: row.name,
+        map_name: row.map,
+        side: row.side,
+        a: Number((row.a_count / (row.total_rounds || 1)).toFixed(2)),
+        mid: Number((row.mid_count / (row.total_rounds || 1)).toFixed(2)),
+        b: Number((row.b_count / (row.total_rounds || 1)).toFixed(2)),
+    }));
 }
