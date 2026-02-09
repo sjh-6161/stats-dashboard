@@ -4,12 +4,14 @@ import { getMapKills } from "@/lib/services";
 
 type KDPlotsProps = {
     tournament: string;
+    season: number;
+    stage: string;
 };
 
-export async function KDPlots({ tournament }: KDPlotsProps) {
+export async function KDPlots({ tournament, season, stage }: KDPlotsProps) {
     // const [map_name, set_map_name] = useState("de_inferno")
 
-    const kills = await getMapKills("de_inferno", "", tournament)
+    const kills = await getMapKills("de_inferno", tournament, season, stage)
 
     return (
         <div className="grid grid-cols-2 h-full w-full">

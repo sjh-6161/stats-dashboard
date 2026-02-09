@@ -55,35 +55,51 @@ function formatRWP(won: number, total: number): string {
 
 export default function TeamPage({ tournaments }: TeamPageProps) {
     const [tournament, setTournament] = useState(tournaments[0] || '')
+    const [season, setSeason] = useState<number | null>(null)
+    const [stage, setStage] = useState<string>('')
     const [team, setTeam] = useState<string | undefined>(undefined)
     const [data, setData] = useState<TeamData | null>(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
+        if (!tournament || season === null || !stage) return
         setLoading(true)
-        fetchTeamPageData(tournament, team).then((result) => {
+        fetchTeamPageData(tournament, season, stage, team).then((result) => {
             setData(result)
             setLoading(false)
         })
-    }, [tournament, team])
+    }, [tournament, season, stage, team])
 
-    if (loading || !data) {
-        return (
-            <div className="flex items-center justify-center p-4">
-                <Spinner className="size-8" />
-            </div>
-        )
+    const handleTournamentChange = (t: string) => {
+        setTournament(t)
+        setSeason(null)
+        setStage('')
     }
 
-    const overallStats = data.roundStats?.find(s => s.map === null);
-    const map_names = [...new Set(data.roundStats.map(obj => obj.map).filter((m): m is string => m !== null))];
+    const handleSeasonChange = (s: number) => {
+        setSeason(s)
+        setStage('')
+    }
+
+    const overallStats = data?.roundStats?.find(s => s.map === null);
+    const map_names = data ? [...new Set(data.roundStats.map(obj => obj.map).filter((m): m is string => m !== null))] : [];
 
     return (
         <div>
             <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-4">
-                    <TournamentSelector tournaments={tournaments} value={tournament} onValueChange={setTournament} />
-                    <TeamSelector teams={data.teams} currentTeam={team} onTeamChange={setTeam} />
+                    <TournamentSelector
+                        tournaments={tournaments}
+                        tournament={tournament}
+                        season={season}
+                        stage={stage}
+                        onTournamentChange={handleTournamentChange}
+                        onSeasonChange={handleSeasonChange}
+                        onStageChange={setStage}
+                        onSeasonsLoaded={(_seasons, first) => setSeason(first)}
+                        onStagesLoaded={(_stages, first) => setStage(first)}
+                    />
+                    {data && <TeamSelector teams={data.teams} currentTeam={team} onTeamChange={setTeam} />}
                 </div>
                 {overallStats && (
                     <div className="flex gap-2">
@@ -114,7 +130,11 @@ export default function TeamPage({ tournaments }: TeamPageProps) {
                 )}
             </div>
 
-            {overallStats && (
+            {loading || !data ? (
+                <div className="flex items-center justify-center p-4">
+                    <Spinner className="size-8" />
+                </div>
+            ) : overallStats && (
                 <div>
                     <Tabs defaultValue={map_names[0] || ""}>
                         {map_names.map(map_name => {

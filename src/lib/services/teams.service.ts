@@ -11,7 +11,7 @@ export async function getTeams(): Promise<Team[]> {
     return teams
 }
 
-export async function getTeamMatches(currentTeam: string, tournament: string): Promise<Match[]> {
+export async function getTeamMatches(currentTeam: string, tournament: string, season: number, stage: string): Promise<Match[]> {
     const matches = await sql<Match[]>`
         SELECT tm1.name AS team_1, tm2.name as team_2, t1.count AS rounds_1, t2.count as rounds_2, match.map
         FROM match
@@ -31,12 +31,14 @@ export async function getTeamMatches(currentTeam: string, tournament: string): P
         INNER JOIN team tm2 ON tm2.id = team_two_id
         WHERE (tm1.name = ${currentTeam} OR tm2.name = ${currentTeam})
         AND match.tournament = ${tournament}
+        AND match.season = ${season}
+        AND match.stage = ${stage}
     `
 
     return matches
 }
 
-export async function getTeamTSideStats(tournament: string): Promise<TeamTStat[]> {
+export async function getTeamTSideStats(tournament: string, season: number, stage: string): Promise<TeamTStat[]> {
     const tstats = await sql<TeamTStat[]>`
         SELECT t_round_time.name, t_round_time.avg_time, CAST(round_info.wins AS FLOAT) / round_info.rounds AS trwp, CAST(deaths AS FLOAT) / round_info.rounds AS deaths, CAST(planted AS FLOAT) / round_info.rounds AS planted, coalesce(CAST(t_save AS FLOAT) / round_info.rounds, 0) AS t_save
         FROM (
@@ -78,6 +80,8 @@ export async function getTeamTSideStats(tournament: string): Promise<TeamTStat[]
             ON round.match_id = match.id
             WHERE (round.round_end_reason = 'CTWin' OR round.round_end_reason = 'TerroristsWin')
             AND match.tournament = ${tournament}
+                AND match.season = ${season}
+                AND match.stage = ${stage}
             GROUP BY team.name
         ) deaths ON t_round_time.name = deaths.name FULL OUTER JOIN (
             SELECT team.name, COUNT(team.name) as planted
@@ -88,6 +92,8 @@ export async function getTeamTSideStats(tournament: string): Promise<TeamTStat[]
             ON round.match_id = match.id
             WHERE (round.round_end_reason = 'BombDefused' OR round.round_end_reason = 'TargetBombed')
             AND match.tournament = ${tournament}
+                AND match.season = ${season}
+                AND match.stage = ${stage}
             GROUP BY team.name
         ) planted ON t_round_time.name = planted.name FULL OUTER JOIN (
             SELECT team.name, COUNT(team.name) as t_save
@@ -98,6 +104,8 @@ export async function getTeamTSideStats(tournament: string): Promise<TeamTStat[]
             ON round.match_id = match.id
             WHERE round.round_end_reason = 'TargetSaved'
             AND match.tournament = ${tournament}
+                AND match.season = ${season}
+                AND match.stage = ${stage}
             GROUP BY team.name
         ) t_save ON t_round_time.name = t_save.name
         ORDER BY trwp DESC
@@ -106,7 +114,7 @@ export async function getTeamTSideStats(tournament: string): Promise<TeamTStat[]
     return tstats
 }
 
-export async function getTeamBuyDefaults(currentTeam: string | null, minVal: number, maxVal: number, tournament: string): Promise<TeamDefault[]> {
+export async function getTeamBuyDefaults(currentTeam: string | null, minVal: number, maxVal: number, tournament: string, season: number, stage: string): Promise<TeamDefault[]> {
     const defaults = await sql<TeamDefault[]>`
         WITH round_defaults AS (
             SELECT
@@ -145,6 +153,8 @@ export async function getTeamBuyDefaults(currentTeam: string | null, minVal: num
                 AND round.t_rounds + round.ct_rounds != 0
                 AND round.t_rounds + round.ct_rounds != 12
                 AND match.tournament = ${tournament}
+                AND match.season = ${season}
+                AND match.stage = ${stage}
         ),
         ct_wins AS (
             SELECT
@@ -190,6 +200,8 @@ export async function getTeamBuyDefaults(currentTeam: string | null, minVal: num
                 AND round.t_rounds + round.ct_rounds != 0
                 AND round.t_rounds + round.ct_rounds != 12
                 AND match.tournament = ${tournament}
+                AND match.season = ${season}
+                AND match.stage = ${stage}
             GROUP BY match.map, rd.num_a, rd.num_b, rd.num_mid, rd.side
         )
         SELECT
@@ -236,7 +248,7 @@ export type TeamRoundStats = {
     gun_lost: number;
 };
 
-export async function getTeamRoundStats(teamName: string, tournament: string): Promise<TeamRoundStats[]> {
+export async function getTeamRoundStats(teamName: string, tournament: string, season: number, stage: string): Promise<TeamRoundStats[]> {
     const stats = await sql<TeamRoundStats[]>`
         WITH buys AS (
             SELECT round_id, team_id, SUM(equipment_value) AS sum
@@ -262,6 +274,8 @@ export async function getTeamRoundStats(teamName: string, tournament: string): P
             LEFT JOIN buys team_buy ON team_buy.round_id = round.id AND team_buy.team_id = team.id
             WHERE team.name = ${teamName}
                 AND match.tournament = ${tournament}
+                AND match.season = ${season}
+                AND match.stage = ${stage}
         ),
         round_data_with_opp AS (
             SELECT
@@ -301,7 +315,7 @@ export async function getTeamRoundStats(teamName: string, tournament: string): P
     return stats;
 }
 
-export async function getTeamPistolDefaults(currentTeam: string | null, tournament: string): Promise<TeamDefault[]> {
+export async function getTeamPistolDefaults(currentTeam: string | null, tournament: string, season: number, stage: string): Promise<TeamDefault[]> {
     const defaults = await sql<TeamDefault[]>`
         WITH round_defaults AS (
             SELECT
@@ -337,6 +351,8 @@ export async function getTeamPistolDefaults(currentTeam: string | null, tourname
             WHERE (${currentTeam}::text IS NULL OR team.name = ${currentTeam})
                 AND (round.t_rounds + round.ct_rounds = 0 OR round.t_rounds + round.ct_rounds = 12)
                 AND match.tournament = ${tournament}
+                AND match.season = ${season}
+                AND match.stage = ${stage}
         ),
         ct_wins AS (
             SELECT
@@ -379,6 +395,8 @@ export async function getTeamPistolDefaults(currentTeam: string | null, tourname
             WHERE (${currentTeam}::text IS NULL OR team.name = ${currentTeam})
                 AND (round.t_rounds + round.ct_rounds = 0 OR round.t_rounds + round.ct_rounds = 12)
                 AND match.tournament = ${tournament}
+                AND match.season = ${season}
+                AND match.stage = ${stage}
             GROUP BY match.map, rd.num_a, rd.num_b, rd.num_mid, rd.side
         )
         SELECT

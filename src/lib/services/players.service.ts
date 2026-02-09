@@ -2,7 +2,7 @@ import { sql } from '@/lib/db';
 import type { KDStat, WPAStat, PlayerPositionStat, TeamPlayerPosition } from '@/lib/types';
 import { ACTIVE_DUTY_MAPS, type ActiveDutyMap } from '@/lib/config/maps';
 
-export async function getPlayerKDStats(tournament: string): Promise<KDStat[]> {
+export async function getPlayerKDStats(tournament: string, season: number, stage: string): Promise<KDStat[]> {
     const kdstats = await sql<KDStat[]>`
         SELECT t1.steam_id, t1.name, t1.kills, t2.deaths, t3.assists, t4.rounds, CAST(t1.kills as float) / t2.deaths as kd, CAST(t1.kills as float) / t4.rounds as kr, CAST(t2.deaths as float) / t4.rounds as dr, CAST(t3.assists as float) / t4.rounds as ar
         FROM (
@@ -13,6 +13,8 @@ export async function getPlayerKDStats(tournament: string): Promise<KDStat[]> {
             INNER JOIN match
             ON kill.match_id = match.id
             WHERE match.tournament = ${tournament}
+            AND match.season = ${season}
+            AND match.stage = ${stage}
             GROUP BY player.steam_id, player.name
         ) t1 INNER JOIN (
             SELECT player.name, COUNT(player.name) AS deaths
@@ -22,6 +24,8 @@ export async function getPlayerKDStats(tournament: string): Promise<KDStat[]> {
             INNER JOIN match
             ON kill.match_id = match.id
             WHERE match.tournament = ${tournament}
+            AND match.season = ${season}
+            AND match.stage = ${stage}
             GROUP BY player.name
         ) t2 ON t1.name = t2.name
             INNER JOIN (
@@ -32,6 +36,8 @@ export async function getPlayerKDStats(tournament: string): Promise<KDStat[]> {
             INNER JOIN match
             ON kill.match_id = match.id
             WHERE match.tournament = ${tournament}
+            AND match.season = ${season}
+            AND match.stage = ${stage}
             GROUP BY player.name
         ) t3 ON t1.name = t3.name
         INNER JOIN (
@@ -42,6 +48,8 @@ export async function getPlayerKDStats(tournament: string): Promise<KDStat[]> {
                 INNER JOIN match
                 ON buy.match_id = match.id
                 WHERE match.tournament = ${tournament}
+            AND match.season = ${season}
+            AND match.stage = ${stage}
                 GROUP BY player.steam_id, buy.match_id
             ) t1 INNER JOIN (
                 SELECT round.match_id, COUNT(round.match_id)
@@ -49,6 +57,8 @@ export async function getPlayerKDStats(tournament: string): Promise<KDStat[]> {
                 INNER JOIN match
                 ON round.match_id = match.id
                 WHERE match.tournament = ${tournament}
+            AND match.season = ${season}
+            AND match.stage = ${stage}
                 GROUP BY round.match_id
             ) t2 ON t1.match_id = t2.match_id
             INNER JOIN player ON player.steam_id = t1.player_id
@@ -106,7 +116,7 @@ function getMapShortName(mapName: string): string {
     return mapName.replace('de_', '');
 }
 
-export async function getPlayerPositionStats(tournament: string, side: 'CT' | 'TERRORIST', teamName?: string): Promise<PlayerPositionStat[]> {
+export async function getPlayerPositionStats(tournament: string, season: number, stage: string, side: 'CT' | 'TERRORIST', teamName?: string): Promise<PlayerPositionStat[]> {
     // Query to get position counts per player per map filtered by side and optionally by team
     type RawStat = {
         steam_id: string,
@@ -136,6 +146,8 @@ export async function getPlayerPositionStats(tournament: string, side: 'CT' | 'T
             INNER JOIN match ON match.id = pd.match_id
             INNER JOIN team ON team.id = pd.team_id
             WHERE match.tournament = ${tournament}
+            AND match.season = ${season}
+            AND match.stage = ${stage}
             AND pd.side = ${side}
             AND team.name = ${teamName}
             GROUP BY player.steam_id, player.name, match.map
@@ -156,6 +168,8 @@ export async function getPlayerPositionStats(tournament: string, side: 'CT' | 'T
             INNER JOIN player ON player.steam_id = pd.player_id
             INNER JOIN match ON match.id = pd.match_id
             WHERE match.tournament = ${tournament}
+            AND match.season = ${season}
+            AND match.stage = ${stage}
             AND pd.side = ${side}
             GROUP BY player.steam_id, player.name, match.map
             ORDER BY player.name, match.map
@@ -202,7 +216,7 @@ export async function getPlayerPositionStats(tournament: string, side: 'CT' | 'T
     return Array.from(playerMap.values());
 }
 
-export async function getTeamMapPlayerPositions(teamName: string, tournament: string): Promise<TeamPlayerPosition[]> {
+export async function getTeamMapPlayerPositions(teamName: string, tournament: string, season: number, stage: string): Promise<TeamPlayerPosition[]> {
     const rawStats = await sql<{ name: string, map: string, side: string, total_rounds: number, a_count: number, mid_count: number, b_count: number }[]>`
         SELECT
             player.name,
@@ -217,6 +231,8 @@ export async function getTeamMapPlayerPositions(teamName: string, tournament: st
         INNER JOIN match ON match.id = pd.match_id
         INNER JOIN team ON team.id = pd.team_id
         WHERE match.tournament = ${tournament}
+            AND match.season = ${season}
+            AND match.stage = ${stage}
         AND team.name = ${teamName}
         GROUP BY player.name, match.map, pd.side
         ORDER BY player.name, match.map

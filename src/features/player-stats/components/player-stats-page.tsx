@@ -14,20 +14,44 @@ type PlayerStatsPageProps = {
 
 export default function PlayerStatsPage({ tournaments }: PlayerStatsPageProps) {
     const [tournament, setTournament] = useState(tournaments[0] || '')
+    const [season, setSeason] = useState<number | null>(null)
+    const [stage, setStage] = useState<string>('')
     const [data, setData] = useState<KDStat[] | null>(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
+        if (!tournament || season === null || !stage) return
         setLoading(true)
-        fetchPlayerStats(tournament).then((result) => {
+        fetchPlayerStats(tournament, season, stage).then((result) => {
             setData(result)
             setLoading(false)
         })
-    }, [tournament])
+    }, [tournament, season, stage])
+
+    const handleTournamentChange = (t: string) => {
+        setTournament(t)
+        setSeason(null)
+        setStage('')
+    }
+
+    const handleSeasonChange = (s: number) => {
+        setSeason(s)
+        setStage('')
+    }
 
     return (
         <div className="flex flex-col gap-4 h-full">
-            <TournamentSelector tournaments={tournaments} value={tournament} onValueChange={setTournament} />
+            <TournamentSelector
+                tournaments={tournaments}
+                tournament={tournament}
+                season={season}
+                stage={stage}
+                onTournamentChange={handleTournamentChange}
+                onSeasonChange={handleSeasonChange}
+                onStageChange={setStage}
+                onSeasonsLoaded={(_seasons, first) => setSeason(first)}
+                onStagesLoaded={(_stages, first) => setStage(first)}
+            />
             {loading || !data ? (
                 <div className="flex items-center justify-center flex-1">
                     <Spinner className="size-8" />

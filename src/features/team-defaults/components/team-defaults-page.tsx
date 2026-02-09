@@ -45,34 +45,55 @@ type DefaultsData = {
 
 export default function TeamDefaultsPage({ tournaments }: TeamDefaultsPageProps) {
     const [tournament, setTournament] = useState(tournaments[0] || '')
+    const [season, setSeason] = useState<number | null>(null)
+    const [stage, setStage] = useState<string>('')
     const [team, setTeam] = useState<string | undefined>(undefined)
     const [data, setData] = useState<DefaultsData | null>(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
+        if (!tournament || season === null || !stage) return
         setLoading(true)
-        fetchTeamDefaultsData(tournament, team).then((result) => {
+        fetchTeamDefaultsData(tournament, season, stage, team).then((result) => {
             setData(result)
             setLoading(false)
         })
-    }, [tournament, team])
+    }, [tournament, season, stage, team])
 
-    if (loading || !data) {
-        return (
-            <div className="flex items-center justify-center p-4">
-                <Spinner className="size-8" />
-            </div>
-        )
+    const handleTournamentChange = (t: string) => {
+        setTournament(t)
+        setSeason(null)
+        setStage('')
     }
 
-    const map_names: string[] = [...new Set(data.buy_defaults.map(obj => obj.map_name))];
+    const handleSeasonChange = (s: number) => {
+        setSeason(s)
+        setStage('')
+    }
+
+    const map_names: string[] = data ? [...new Set(data.buy_defaults.map(obj => obj.map_name))] : [];
 
     return (
         <div>
             <div className="flex items-center gap-4 mb-4">
-                <TournamentSelector tournaments={tournaments} value={tournament} onValueChange={setTournament} />
-                <TeamSelector teams={data.teams} currentTeam={team} onTeamChange={setTeam} />
+                <TournamentSelector
+                    tournaments={tournaments}
+                    tournament={tournament}
+                    season={season}
+                    stage={stage}
+                    onTournamentChange={handleTournamentChange}
+                    onSeasonChange={handleSeasonChange}
+                    onStageChange={setStage}
+                    onSeasonsLoaded={(_seasons, first) => setSeason(first)}
+                    onStagesLoaded={(_stages, first) => setStage(first)}
+                />
+                {data && <TeamSelector teams={data.teams} currentTeam={team} onTeamChange={setTeam} />}
             </div>
+            {loading || !data ? (
+                <div className="flex items-center justify-center p-4">
+                    <Spinner className="size-8" />
+                </div>
+            ) : (
             <Tabs defaultValue={map_names[0] || ""}>
                 <TabsList>
                 {map_names.map(map_name => {
@@ -118,6 +139,7 @@ export default function TeamDefaultsPage({ tournaments }: TeamDefaultsPageProps)
                 )
             })}
             </Tabs>
+            )}
         </div>
     )
 }

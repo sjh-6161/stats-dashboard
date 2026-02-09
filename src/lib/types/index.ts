@@ -11,4 +11,4 @@ export type { MapGrenade, MapKill, MapPlant } from './map.types';
 export type { Match } from './match.types';
 
 // Tournament types
-export type { Tournament } from './tournament.types';
+export type { Tournament, Season, Stage } from './tournament.types';

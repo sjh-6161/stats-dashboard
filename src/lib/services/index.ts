@@ -16,4 +16,4 @@ export type { TeamRoundStats } from './teams.service';
 export { getMapGrenades, getMapKills } from './maps.service';
 
 // Tournament services
-export { getTournaments } from './tournaments.service';
+export { getTournaments, getSeasons, getStages } from './tournaments.service';

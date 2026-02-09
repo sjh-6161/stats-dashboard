@@ -42,7 +42,13 @@ interface PlayerPositionTableProps {
     currentTeam?: string
     tournaments: string[]
     selectedTournament: string
+    selectedSeason: number | null
+    selectedStage: string
     onTournamentChange: (tournament: string) => void
+    onSeasonChange: (season: number) => void
+    onStageChange: (stage: string) => void
+    onSeasonsLoaded: (seasons: number[], firstSeason: number) => void
+    onStagesLoaded: (stages: string[], firstStage: string) => void
     onTeamChange: (teamName: string) => void
 }
 
@@ -54,7 +60,13 @@ export function PlayerPositionTable({
     currentTeam,
     tournaments,
     selectedTournament,
+    selectedSeason,
+    selectedStage,
     onTournamentChange,
+    onSeasonChange,
+    onStageChange,
+    onSeasonsLoaded,
+    onStagesLoaded,
     onTeamChange,
 }: PlayerPositionTableProps) {
     const [side, setSide] = React.useState<'CT' | 'T'>('CT')
@@ -86,7 +98,17 @@ export function PlayerPositionTable({
     return (
         <div>
             <div className="flex items-center gap-4 mb-4">
-                <TournamentSelector tournaments={tournaments} value={selectedTournament} onValueChange={onTournamentChange} />
+                <TournamentSelector
+                    tournaments={tournaments}
+                    tournament={selectedTournament}
+                    season={selectedSeason}
+                    stage={selectedStage}
+                    onTournamentChange={onTournamentChange}
+                    onSeasonChange={onSeasonChange}
+                    onStageChange={onStageChange}
+                    onSeasonsLoaded={onSeasonsLoaded}
+                    onStagesLoaded={onStagesLoaded}
+                />
                 <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">Team:</span>
                     <Select value={currentTeam || "all"} onValueChange={onTeamChange}>

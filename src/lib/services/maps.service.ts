@@ -1,7 +1,7 @@
 import { sql } from '@/lib/db';
 import type { MapGrenade, MapKill, MapPlant } from '@/lib/types';
 
-export async function getMapGrenades(currentTeam: string, tournament: string): Promise<MapGrenade[]> {
+export async function getMapGrenades(currentTeam: string, tournament: string, season: number, stage: string): Promise<MapGrenade[]> {
     const grenades = await sql<MapGrenade[]>`
         WITH round_defaults AS (
             SELECT
@@ -44,12 +44,13 @@ export async function getMapGrenades(currentTeam: string, tournament: string): P
         LEFT JOIN buys team_buy ON team_buy.round_id = grenade.round_id AND team_buy.team_id = grenade.team_id
         LEFT JOIN round_defaults rd ON rd.round_id = grenade.round_id AND rd.team_id = grenade.team_id
         WHERE team.name = ${currentTeam} AND match.tournament = ${tournament}
+        AND match.season = ${season} AND match.stage = ${stage}
     `
 
     return grenades
 }
 
-export async function getMapKills(currentTeam: string, tournament: string): Promise<MapKill[]> {
+export async function getMapKills(currentTeam: string, tournament: string, season: number, stage: string): Promise<MapKill[]> {
     const kills = await sql<MapKill[]>`
         WITH round_defaults AS (
             SELECT
@@ -104,12 +105,13 @@ export async function getMapKills(currentTeam: string, tournament: string): Prom
                 ELSE t2.id
             END
         WHERE (t1.name = ${currentTeam} OR t2.name = ${currentTeam}) AND match.tournament = ${tournament}
+        AND match.season = ${season} AND match.stage = ${stage}
     `
 
     return kills
 }
 
-export async function getMapPlants(currentTeam: string, tournament: string): Promise<MapPlant[]> {
+export async function getMapPlants(currentTeam: string, tournament: string, season: number, stage: string): Promise<MapPlant[]> {
     const plants = await sql<MapPlant[]>`
         WITH round_defaults AS (
             SELECT
@@ -145,6 +147,7 @@ export async function getMapPlants(currentTeam: string, tournament: string): Pro
         LEFT JOIN buys team_buy ON team_buy.round_id = plant.round_id AND team_buy.team_id = team.id
         LEFT JOIN round_defaults rd ON rd.round_id = plant.round_id AND rd.team_id = team.id
         WHERE team.name = ${currentTeam} AND match.tournament = ${tournament}
+        AND match.season = ${season} AND match.stage = ${stage}
     `
 
     return plants

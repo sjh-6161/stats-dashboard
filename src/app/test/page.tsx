@@ -1,5 +1,5 @@
 import { KDPlots } from "@/components/map-visualization";
-import { getTournaments } from "@/lib/services";
+import { getTournaments, getSeasons, getStages } from "@/lib/services";
 
 export default async function TestPage() {
   const tournaments = await getTournaments();
@@ -13,5 +13,18 @@ export default async function TestPage() {
     );
   }
 
-  return <KDPlots tournament={tournament} />;
+  const seasons = await getSeasons(tournament);
+  const season = seasons[0]?.season;
+  if (!season) {
+    return (
+      <div className="flex items-center justify-center">
+        <p>No seasons available.</p>
+      </div>
+    );
+  }
+
+  const stages = await getStages(tournament, season);
+  const stage = stages[0]?.stage || '';
+
+  return <KDPlots tournament={tournament} season={season} stage={stage} />;
 }

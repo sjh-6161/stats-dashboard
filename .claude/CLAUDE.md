@@ -26,7 +26,9 @@ CREATE TABLE IF NOT EXISTS match (
     team_two_id uuid NOT NULL REFERENCES team(id),
     map varchar(100) NOT NULL,
     file varchar(500) NOT NULL,
-    tournament varchar(500) NOT NULL
+    tournament varchar(500) NOT NULL,
+    stage varchar(500) NOT NULL,
+    season int NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS round (
