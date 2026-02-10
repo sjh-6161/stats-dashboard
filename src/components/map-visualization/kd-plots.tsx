@@ -1,5 +1,3 @@
-import { Map } from "./map";
-import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
 import { getMapKills } from "@/lib/services";
 
 type KDPlotsProps = {
@@ -11,7 +9,7 @@ type KDPlotsProps = {
 export async function KDPlots({ tournament, season, stage }: KDPlotsProps) {
     // const [map_name, set_map_name] = useState("de_inferno")
 
-    const kills = await getMapKills("de_inferno", tournament, season, stage)
+    await getMapKills("de_inferno", tournament, season, stage)
     return (<></>);
 
     // return (

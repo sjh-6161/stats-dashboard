@@ -1,7 +1,7 @@
 "use client"
  
 import { ColumnDef } from "@tanstack/react-table"
-import { WPAStat } from "../../lib/definitions"
+import { WPAStat } from "@/lib/types"
 import { ArrowUpDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 

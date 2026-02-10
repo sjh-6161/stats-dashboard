@@ -44,7 +44,7 @@ export function TournamentSelector({
                 onSeasonsLoaded(result, result[0])
             }
         })
-    }, [tournament])
+    }, [tournament, onSeasonsLoaded])
 
     useEffect(() => {
         if (!tournament || season === null) return
@@ -54,7 +54,7 @@ export function TournamentSelector({
                 onStagesLoaded(result, result[0])
             }
         })
-    }, [tournament, season])
+    }, [tournament, season, onStagesLoaded])
 
     if (tournaments.length === 0) return null
 

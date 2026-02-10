@@ -1,8 +1,8 @@
 "use client"
 
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { ScatterChart, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, Tooltip, ResponsiveContainer, Label } from 'recharts';
-import type { KDStat, TeamTStat } from "@/lib/types";
+import { ScatterChart, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, Label } from 'recharts';
+import type { TeamTStat } from "@/lib/types";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 import { ComponentLabel } from "@/components/ui/label";

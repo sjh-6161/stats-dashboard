@@ -4,12 +4,9 @@ import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import Image from 'next/image'
 import { ReactNode } from "react";
 
-const mapdata = require('./mapdata.json')
+import mapdata from './mapdata.json'
 
-const side_colors = {
-    'CT': 'stroke-blue-500',
-    'TERRORIST': 'stroke-yellow-500'
-}
+const mapdataRecord = mapdata as Record<string, { pos_x: number; pos_y: number; scale: number }>
 
 export function Map({
     map_name, 
@@ -41,9 +38,9 @@ export function Map({
 }
 
 export function positionTransformX(x: number, mapname: string) {
-  return 100 * (x - mapdata[mapname]["pos_x"]) / (mapdata[mapname]["scale"] * 1024)
+  return 100 * (x - mapdataRecord[mapname]["pos_x"]) / (mapdataRecord[mapname]["scale"] * 1024)
 }
 
 export function positionTransformY(y: number, mapname: string) {
-  return 100 * (mapdata[mapname]["pos_y"] - y) / (mapdata[mapname]["scale"] * 1024)
+  return 100 * (mapdataRecord[mapname]["pos_y"] - y) / (mapdataRecord[mapname]["scale"] * 1024)
 }

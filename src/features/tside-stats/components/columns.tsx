@@ -1,7 +1,7 @@
 "use client"
  
 import { ColumnDef } from "@tanstack/react-table"
-import { TeamTStat } from "../../lib/definitions"
+import { TeamTStat } from "@/lib/types"
 import { ArrowUpDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 

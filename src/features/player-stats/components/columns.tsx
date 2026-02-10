@@ -1,7 +1,7 @@
 "use client"
  
 import { ColumnDef } from "@tanstack/react-table"
-import { KDStat } from "../../lib/definitions"
+import { KDStat } from "@/lib/types"
 import { ArrowUpDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
