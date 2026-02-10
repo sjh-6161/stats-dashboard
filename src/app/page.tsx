@@ -1,6 +1,8 @@
 import PlayerStatsPage from "@/features/player-stats";
 import { getTournaments } from "@/lib/services";
 
+export const dynamic = 'force-dynamic';
+
 export default async function Home() {
   const tournaments = await getTournaments();
   const tournamentNames = tournaments.map(t => t.name);

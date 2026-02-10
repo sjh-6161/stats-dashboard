@@ -1,6 +1,8 @@
 import { KDPlots } from "@/components/map-visualization";
 import { getTournaments, getSeasons, getStages } from "@/lib/services";
 
+export const dynamic = 'force-dynamic';
+
 export default async function TestPage() {
   const tournaments = await getTournaments();
   const tournament = tournaments[0]?.name || '';

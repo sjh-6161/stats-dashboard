@@ -1,6 +1,8 @@
 import TSideStatsPage from "@/features/tside-stats";
 import { getTournaments } from "@/lib/services";
 
+export const dynamic = 'force-dynamic';
+
 export default async function TSideRoute() {
   const tournaments = await getTournaments();
   const tournamentNames = tournaments.map(t => t.name);
