@@ -12,12 +12,12 @@ type Tab = {
 
 const tabs: Tab[] = [
   { path: '/', label: 'Player' },
-  { path: '/wpa', label: 'WPA', disabled: true },
-  { path: '/test', label: 'Test', disabled: true },
   { path: '/team', label: 'Team' },
   { path: '/team-defaults', label: 'Team Defaults' },
-  { path: '/t-side', label: 'T Side', disabled: true },
   { path: '/player-position', label: 'Player Position' },
+  { path: '/wpa', label: 'WPA', disabled: true },
+  { path: '/test', label: 'Test', disabled: true },
+  { path: '/t-side', label: 'T Side', disabled: true },
 ];
 
 export function TabNavigation() {
