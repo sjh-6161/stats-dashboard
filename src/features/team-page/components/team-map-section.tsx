@@ -22,7 +22,7 @@ type TeamMapSectionProps = {
 }
 
 type MapType = "utility" | "duels" | "plants";
-type TimingType = "early" | "preplant" | "postplant";
+type TimingType = "all" | "early" | "preplant" | "postplant";
 type DuelDisplayMode = "both" | "lines" | "endpoints";
 type GrenadeFilter = "all" | "smoke" | "molotov" | "flash" | "he";
 
@@ -89,22 +89,24 @@ export default function TeamMapSection({
             })
             .filter(d => {
                 switch (timingType) {
+                    case "all":
+                        return true;
                     case "early":
                         // Kills within the first X seconds of the round
                         return d.time <= timeFilter;
                     case "preplant":
-                        // Kills within X seconds before plant
+                        // Kills within 30 seconds before plant
                         if (d.plant_time === null) {
                             // No plant in this round - exclude from pre-plant view
                             return false;
                         }
-                        return d.time < d.plant_time && (d.plant_time - d.time) <= timeFilter;
+                        return d.time < d.plant_time && (d.plant_time - d.time) <= 30;
                     case "postplant":
-                        // Kills within X seconds after plant
+                        // Kills within 30 seconds after plant
                         if (d.plant_time === null) {
                             return false;
                         }
-                        return d.time >= d.plant_time && (d.time - d.plant_time) <= timeFilter;
+                        return d.time >= d.plant_time && (d.time - d.plant_time) <= 30;
                     default:
                         return true;
                 }
@@ -142,22 +144,24 @@ export default function TeamMapSection({
                 // All grenade end_times include the full effect duration
                 const expireTime = g.end_time;
                 switch (timingType) {
+                    case "all":
+                        return true;
                     case "early":
                         // Include grenades that have started by the slider time and haven't expired
                         return g.start_time <= timeFilter;
                     case "preplant": {
-                        // Show grenades visible in the window [plant_time - timeFilter, plant_time]
+                        // Show grenades visible in the window [plant_time - 30s, plant_time]
                         if (g.plant_time === null) return false;
-                        const windowStart = g.plant_time - timeFilter;
+                        const windowStart = g.plant_time - 30;
                         const windowEnd = g.plant_time;
                         // Grenade is relevant if it's active (thrown and not expired) during the window
                         return g.start_time <= windowEnd && expireTime >= windowStart;
                     }
                     case "postplant": {
-                        // Show grenades visible in the window [plant_time, plant_time + timeFilter]
+                        // Show grenades visible in the window [plant_time, plant_time + 30s]
                         if (g.plant_time === null) return false;
                         const windowStart = g.plant_time;
-                        const windowEnd = g.plant_time + timeFilter;
+                        const windowEnd = g.plant_time + 30;
                         return g.start_time <= windowEnd && expireTime >= windowStart;
                     }
                     default:
@@ -168,12 +172,14 @@ export default function TeamMapSection({
 
     const getTimingLabel = () => {
         switch (timingType) {
+            case "all":
+                return "All rounds";
             case "early":
                 return `First ${timeFilter}s of round`;
             case "preplant":
-                return `Within ${timeFilter}s before plant`;
+                return "Within 30s before plant";
             case "postplant":
-                return `Within ${timeFilter}s after plant`;
+                return "Within 30s after plant";
         }
     };
 
@@ -193,6 +199,7 @@ export default function TeamMapSection({
                 </Tabs>
                 {mapType != "plants" && <Tabs value={timingType} onValueChange={(v) => setTimingType(v as TimingType)} className="mb-2">
                     <TabsList>
+                        <TabsTrigger value="all">All</TabsTrigger>
                         <TabsTrigger value="early">Early Round</TabsTrigger>
                         <TabsTrigger value="preplant">Pre-Plant</TabsTrigger>
                         <TabsTrigger value="postplant">Post-Plant</TabsTrigger>
@@ -211,17 +218,24 @@ export default function TeamMapSection({
                             </TabsList>
                         </Tabs>
 
-                        <div className="mb-2">
-                            <div className="text-sm text-gray-600 mb-1">{getTimingLabel()}</div>
-                            <Slider
-                                value={[timeFilter]}
-                                onValueChange={(v) => setTimeFilter(v[0])}
-                                min={0}
-                                max={120}
-                                step={1}
-                                className="w-full"
-                            />
-                        </div>
+                        {timingType === "early" && (
+                            <div className="mb-2">
+                                <div className="text-sm text-gray-600 mb-1">{getTimingLabel()}</div>
+                                <Slider
+                                    value={[timeFilter]}
+                                    onValueChange={(v) => setTimeFilter(v[0])}
+                                    min={0}
+                                    max={120}
+                                    step={1}
+                                    className="w-full"
+                                />
+                            </div>
+                        )}
+                        {timingType !== "early" && (
+                            <div className="mb-2">
+                                <div className="text-sm text-gray-600">{getTimingLabel()}</div>
+                            </div>
+                        )}
 
                         <div className="flex gap-4 text-sm mt-3 flex-wrap">
                             <div className="flex items-center gap-1">
@@ -254,17 +268,24 @@ export default function TeamMapSection({
                             </TabsList>
                         </Tabs>
 
-                        <div className="mb-2">
-                            <div className="text-sm text-gray-600 mb-1">{getTimingLabel()}</div>
-                            <Slider
-                                value={[timeFilter]}
-                                onValueChange={(v) => setTimeFilter(v[0])}
-                                min={0}
-                                max={120}
-                                step={1}
-                                className="w-full"
-                            />
-                        </div>
+                        {timingType === "early" && (
+                            <div className="mb-2">
+                                <div className="text-sm text-gray-600 mb-1">{getTimingLabel()}</div>
+                                <Slider
+                                    value={[timeFilter]}
+                                    onValueChange={(v) => setTimeFilter(v[0])}
+                                    min={0}
+                                    max={120}
+                                    step={1}
+                                    className="w-full"
+                                />
+                            </div>
+                        )}
+                        {timingType !== "early" && (
+                            <div className="mb-2">
+                                <div className="text-sm text-gray-600">{getTimingLabel()}</div>
+                            </div>
+                        )}
 
                         <div className="flex gap-4 text-sm mt-3">
                             <div className="flex items-center gap-1">
@@ -287,7 +308,7 @@ export default function TeamMapSection({
                             x={positionTransformX(p.x, map_name) - 0.5}
                             y={positionTransformY(p.y, map_name) - 0.5}
                             width={1} height={1}
-                            className={`${SiteColors[p.site]} opacity-40`}
+                            className={`${SiteColors[p.site]} opacity-60`}
                             rx={0.2} ry={0.2}
                         />
                     ))}
@@ -299,18 +320,6 @@ export default function TeamMapSection({
                         const startY = positionTransformY(g.start_y, map_name);
                         const endX = positionTransformX(g.end_x, map_name);
                         const endY = positionTransformY(g.end_y, map_name);
-
-                        // Use slider as time cursor for trajectory animation in all modes
-                        let currentTime: number;
-                        if (timingType === "early") {
-                            currentTime = timeFilter;
-                        } else if (timingType === "preplant") {
-                            // Cursor at timeFilter seconds before plant
-                            currentTime = (g.plant_time ?? 0) - timeFilter;
-                        } else {
-                            // postplant: window is [plant_time, plant_time + timeFilter], cursor at end
-                            currentTime = (g.plant_time ?? 0) + timeFilter;
-                        }
 
                         // Smoke/HE end_tick includes time after landing.
                         // Subtract effect duration to get actual flight time.
@@ -326,14 +335,32 @@ export default function TeamMapSection({
                             flightDuration = Math.max(rawDuration, 0.001);
                         }
                         const landTime = g.start_time + flightDuration;
+
+                        // Use slider as time cursor for trajectory animation in all modes
+                        let currentTime: number;
+                        if (timingType === "all") {
+                            // Show all grenades with full trajectory at landed position
+                            currentTime = landTime;
+                        } else if (timingType === "early") {
+                            currentTime = timeFilter;
+                        } else if (timingType === "preplant") {
+                            // Show state at plant time (end of the 30s window)
+                            currentTime = g.plant_time ?? 0;
+                        } else {
+                            // postplant: show state at end of 30s window
+                            currentTime = (g.plant_time ?? 0) + 30;
+                        }
                         const isInFlight = currentTime >= g.start_time && currentTime <= landTime;
                         const hasLanded = currentTime > landTime;
                         const timeSinceLanding = hasLanded ? currentTime - landTime : 0;
-                        // Flash/HE get a minimum persist time so they're visible after popping
+                        // Flash/HE/Molotov get a minimum persist time so they're visible after popping
                         const MIN_FLASH_HE_PERSIST = 5;
+                        const MIN_MOLOTOV_PERSIST = 7;
                         const dataExpiry = g.end_time;
                         const expiryTime = (category === "flash" || category === "he")
                             ? Math.max(dataExpiry, landTime + MIN_FLASH_HE_PERSIST)
+                            : category === "molotov"
+                            ? Math.max(dataExpiry, landTime + MIN_MOLOTOV_PERSIST)
                             : dataExpiry;
                         const isExpired = currentTime > expiryTime;
 
@@ -349,7 +376,7 @@ export default function TeamMapSection({
                         const currentY = startY + (endY - startY) * progress;
 
                         // Determine visibility and opacity based on grenade state
-                        let opacity = 0.6;
+                        let opacity = 0.8;
                         let showTrajectory = true;
                         let showEndCircle = false;
                         let circleRadius = 0.5;
@@ -362,18 +389,18 @@ export default function TeamMapSection({
                             const fadeProgress = effectDuration > 0 ? timeSinceLanding / effectDuration : 1;
                             if (category === "smoke") {
                                 circleRadius = 1.5;
-                                opacity = 0.4;
+                                opacity = 0.6;
                             } else if (category === "molotov") {
                                 circleRadius = 1.0;
-                                opacity = 0.4;
+                                opacity = 0.7 * (1 - fadeProgress);
                             } else if (category === "flash") {
                                 circleRadius = 1.2;
                                 circleColor = "#FFFFFF";
-                                opacity = 0.5 * (1 - fadeProgress);
+                                opacity = 0.7 * (1 - fadeProgress);
                             } else {
                                 // HE
                                 circleRadius = 1.2;
-                                opacity = 0.5 * (1 - fadeProgress);
+                                opacity = 0.7 * (1 - fadeProgress);
                             }
                         }
 
@@ -405,7 +432,7 @@ export default function TeamMapSection({
                                         cy={endY}
                                         r={circleRadius}
                                         fill={circleColor}
-                                        opacity={opacity * 0.6}
+                                        opacity={opacity * 0.8}
                                     />
                                 )}
                             </g>
@@ -438,7 +465,7 @@ export default function TeamMapSection({
                                         y1={attackerY}
                                         x2={victimX}
                                         y2={victimY}
-                                        className={`${lineColor} stroke-[0.15] opacity-30`}
+                                        className={`${lineColor} stroke-[0.15] opacity-50`}
                                     />
                                 )}
 
@@ -449,7 +476,7 @@ export default function TeamMapSection({
                                             cx={teamX}
                                             cy={teamY}
                                             r={0.4}
-                                            className={`${fillColor} opacity-40`}
+                                            className={`${fillColor} opacity-60`}
                                         />
                                     </>
                                 )}
