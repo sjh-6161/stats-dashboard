@@ -51,10 +51,15 @@ export default function TeamMapSection({
     selectedDefaults
 }: TeamMapSectionProps) {
     const [mapType, setMapType] = useState<MapType>("utility");
-    const [timingType, setTimingType] = useState<TimingType>("early");
+    const [timingType, setTimingType] = useState<TimingType>("all");
     const [duelDisplayMode, setDuelDisplayMode] = useState<DuelDisplayMode>("both");
     const [timeFilter, setTimeFilter] = useState<number>(60);
     const [grenadeFilter, setGrenadeFilter] = useState<GrenadeFilter>("all");
+
+    // Switch away from plants tab if CT side is selected
+    if (side === "CT" && mapType === "plants") {
+        setMapType("utility");
+    }
 
     // Helper to check if a duel/plant/grenade matches the selected defaults
     const matchesSelectedDefaults = useMemo(() => {
@@ -173,7 +178,7 @@ export default function TeamMapSection({
     const getTimingLabel = () => {
         switch (timingType) {
             case "all":
-                return "All rounds";
+                return "Entire Round";
             case "early":
                 return `First ${timeFilter}s of round`;
             case "preplant":
@@ -194,7 +199,7 @@ export default function TeamMapSection({
                     <TabsList>
                         <TabsTrigger value="utility">Utility</TabsTrigger>
                         <TabsTrigger value="duels">Duels</TabsTrigger>
-                        <TabsTrigger value="plants">Plants</TabsTrigger>
+                        {side === "TERRORIST" && <TabsTrigger value="plants">Plants</TabsTrigger>}
                     </TabsList>
                 </Tabs>
                 {mapType != "plants" && <Tabs value={timingType} onValueChange={(v) => setTimingType(v as TimingType)} className="mb-2">

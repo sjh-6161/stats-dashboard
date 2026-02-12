@@ -46,7 +46,7 @@ export function TournamentSelector({
             const seasonsChanged = JSON.stringify(prevSeasonsRef.current) !== JSON.stringify(result)
             if (result.length > 0 && seasonsChanged) {
                 prevSeasonsRef.current = result
-                onSeasonsLoaded(result, result[0])
+                onSeasonsLoaded(result, result[result.length - 1])
             }
         })
     }, [tournament, onSeasonsLoaded])
