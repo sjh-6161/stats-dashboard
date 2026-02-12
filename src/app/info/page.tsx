@@ -18,9 +18,9 @@ export default function InfoPage() {
           This web app is a frontend stats visualizer and dashboard I have been building out for a PostgreSQL esports database.
           It displays Counter-Strike match data through interactive visualizations and detailed analytics.
         </p>
-        <p className="text-muted-foreground mb-2">
-          Built with Next.js, React, and TypeScript, this dashboard queries a comprehensive PostgreSQL database containing match data,
-          player statistics, round-by-round breakdowns, and positional information.
+        <p className="text-muted-foreground mb-4">
+          Built with Next.js, React, and TypeScript, this dashboard queries a PostgreSQL database containing match data,
+          player statistics, round-by-round information, and positional information.
         </p>
         <p className="text-muted-foreground">
           This is still very much under development, if you come back in a week or two, there will more than likely be tweaks / updates!
@@ -74,6 +74,10 @@ export default function InfoPage() {
               and match history.
             </p>
           </div>
+
+          <p className="text-muted-foreground leading-relaxed">
+              The WPA (Win Percentage Added), Test, and T Side tabs are under construction. 
+            </p>
         </div>
       </div>
 
@@ -100,7 +104,7 @@ export default function InfoPage() {
       </div>
       <div className="mt-10 pt-6 border-t border-border mb-12">
         Thank you for reading! If you have any questions, I can be contacted via email at sjharrisdc@gmail.com, or via phone at +1 (301)-802-8330
-        <br/>
+        <br className="mb-4"/>
         - Sam
       </div>
     </div>

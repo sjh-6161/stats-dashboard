@@ -21,7 +21,7 @@ export default function TeamSelector({ teams, currentTeam, onTeamChange }: TeamS
             <span className="text-sm font-medium">Team:</span>
             <Select value={currentTeam} onValueChange={onTeamChange}>
                 <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="All" />
+                    <SelectValue placeholder="Select Team" />
                 </SelectTrigger>
                 <SelectContent>
                     {teams.map((team) => (
