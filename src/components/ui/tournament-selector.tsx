@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import {
     Select,
     SelectContent,
@@ -35,12 +35,17 @@ export function TournamentSelector({
 }: TournamentSelectorProps) {
     const [seasons, setSeasons] = useState<number[]>([])
     const [stages, setStages] = useState<string[]>([])
+    const prevSeasonsRef = useRef<number[]>([])
+    const prevStagesRef = useRef<string[]>([])
 
     useEffect(() => {
         if (!tournament) return
         fetchSeasons(tournament).then((result) => {
             setSeasons(result)
-            if (result.length > 0) {
+            // Only call onSeasonsLoaded if seasons actually changed
+            const seasonsChanged = JSON.stringify(prevSeasonsRef.current) !== JSON.stringify(result)
+            if (result.length > 0 && seasonsChanged) {
+                prevSeasonsRef.current = result
                 onSeasonsLoaded(result, result[0])
             }
         })
@@ -50,7 +55,10 @@ export function TournamentSelector({
         if (!tournament || season === null) return
         fetchStages(tournament, season).then((result) => {
             setStages(result)
-            if (result.length > 0) {
+            // Only call onStagesLoaded if stages actually changed
+            const stagesChanged = JSON.stringify(prevStagesRef.current) !== JSON.stringify(result)
+            if (result.length > 0 && stagesChanged) {
+                prevStagesRef.current = result
                 onStagesLoaded(result, result[0])
             }
         })
